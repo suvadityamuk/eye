@@ -1,8 +1,8 @@
-# EYE — 3D Object Viewer
+# Eye - 3D Object Viewer
 
-A browser-based 3D object viewer with a sci-fi HUD interface. View, inspect, and compare 3D models directly in your browser — no plugins, no installs.
+A browser-based 3D object viewer with a sci-fi HUD interface. View, inspect, and compare 3D models directly in your browser. No plugins, no installs.
 
-**Live Demo**: [eye-3d-viewer-ezyrlcfjnq-uc.a.run.app](https://eye-3d-viewer-ezyrlcfjnq-uc.a.run.app)
+**Live Demo**: [eye.suvadityamuk.com](https://eye.suvadityamuk.com)
 
 ---
 
