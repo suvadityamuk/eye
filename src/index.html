@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EYE — 3D Object Viewer</title>
+    <meta name="description"
+        content="Browser-based 3D object viewer with sci-fi HUD interface. Supports GLTF, GLB, OBJ, PLY, FBX, STL, Splat formats.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+            "fflate": "https://cdn.jsdelivr.net/npm/fflate@0.8.2/esm/browser.js"
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast-container"></div>
+
+    <!-- TOP BAR -->
+    <header id="top-bar">
+        <div class="top-bar-left">
+            <button id="btn-sidebar-left" class="sidebar-toggle hud-btn-icon" title="Toggle panels">
+                <span>☰</span>
+            </button>
+            <div class="logo">
+                <span class="logo-bracket">[</span>
+                <span class="logo-text">EYE</span>
+                <span class="logo-bracket">]</span>
+            </div>
+            <span class="top-bar-divider"></span>
+            <span class="top-bar-label">3D OBJECT VIEWER</span>
+        </div>
+        <div class="top-bar-center">
+            <label class="upload-btn" id="upload-btn">
+                <input type="file" id="file-input"
+                    accept=".gltf,.glb,.obj,.mtl,.ply,.fbx,.stl,.3dm,.splat,.usd,.usda,.usdc,.usdz" multiple hidden>
+                <span class="upload-icon">⬆</span>
+                <span>UPLOAD FILE</span>
+            </label>
+            <div class="format-badges">
+                <span class="badge">GLTF</span>
+                <span class="badge">GLB</span>
+                <span class="badge">OBJ</span>
+                <span class="badge">PLY</span>
+                <span class="badge">FBX</span>
+                <span class="badge">STL</span>
+                <span class="badge">3DM</span>
+                <span class="badge">SPLAT</span>
+                <span class="badge coming-soon" title="Coming Soon">USD</span>
+            </div>
+        </div>
+        <div class="top-bar-right">
+            <button id="btn-comparison-toggle" class="hud-btn" title="Toggle Comparison Mode">
+                <span class="btn-icon">◫</span>
+                <span>COMPARE</span>
+            </button>
+            <button id="btn-fullscreen" class="hud-btn" title="Fullscreen">
+                <span class="btn-icon">⛶</span>
+            </button>
+            <button id="btn-sidebar-right" class="sidebar-toggle hud-btn-icon" title="Toggle settings">
+                <span>⚙</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- SIDEBAR BACKDROP (mobile/tablet) -->
+    <div id="sidebar-backdrop"></div>
+
+    <!-- MAIN LAYOUT -->
+    <main id="main-layout">
+        <!-- LEFT SIDEBAR -->
+        <aside id="sidebar-left" class="sidebar">
+            <div class="panel" id="panel-file-info">
+                <div class="panel-header">
+                    <span class="panel-corner tl"></span>
+                    <span class="panel-corner tr"></span>
+                    <span class="panel-title">FILE INFO</span>
+                    <button class="panel-toggle" data-panel="panel-file-info-body">−</button>
+                </div>
+                <div class="panel-body" id="panel-file-info-body">
+                    <div class="info-row">
+                        <span class="info-label">NAME</span>
+                        <span class="info-value" id="info-filename">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">FORMAT</span>
+                        <span class="info-value" id="info-format">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">SIZE</span>
+                        <span class="info-value" id="info-size">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">VERTICES</span>
+                        <span class="info-value" id="info-vertices">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">TRIANGLES</span>
+                        <span class="info-value" id="info-triangles">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">MATERIALS</span>
+                        <span class="info-value" id="info-materials">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">ANIMATIONS</span>
+                        <span class="info-value" id="info-animations">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" id="panel-scene">
+                <div class="panel-header">
+                    <span class="panel-corner tl"></span>
+                    <span class="panel-corner tr"></span>
+                    <span class="panel-title">SCENE</span>
+                    <button class="panel-toggle" data-panel="panel-scene-body">−</button>
+                </div>
+                <div class="panel-body" id="panel-scene-body">
+                    <div class="control-row">
+                        <label>GRID</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-grid" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="control-row">
+                        <label>AXES</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-axes" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="control-row">
+                        <label>WIREFRAME</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="toggle-wireframe">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="control-row">
+                        <label>BG COLOR</label>
+                        <input type="color" id="scene-bg-color" value="#080808" class="hud-color">
+                    </div>
+                    <button class="hud-btn full-width" id="btn-reset-camera">RESET CAMERA</button>
+                </div>
+            </div>
+
+            <div class="panel" id="panel-history">
+                <div class="panel-header">
+                    <span class="panel-corner tl"></span>
+                    <span class="panel-corner tr"></span>
+                    <span class="panel-title">HISTORY</span>
+                    <button class="panel-toggle" data-panel="panel-history-body">−</button>
+                </div>
+                <div class="panel-body" id="panel-history-body">
+                    <div id="history-list">
+                        <div class="empty-state">No history yet</div>
+                    </div>
+                    <button class="hud-btn full-width history-clear-btn" id="btn-history-clear"
+                        style="display:none;">CLEAR HISTORY</button>
+                </div>
+            </div>
+        </aside>
+        <section id="viewport-area">
+            <!-- Single mode viewport -->
+            <div id="viewport-single" class="viewport-container active">
+                <canvas id="canvas-main"></canvas>
+                <div class="viewport-label">VIEWPORT</div>
+                <div class="viewport-dropzone" id="dropzone-main">
+                    <div class="dropzone-content">
+                        <div class="dropzone-icon">⬆</div>
+                        <div class="dropzone-text">DROP 3D FILE HERE</div>
+                        <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · SPLAT</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison mode viewports -->
+            <div id="viewport-comparison" class="viewport-container comparison-grid" style="display:none;"
+                data-visible-slots="1">
+                <div class="comparison-slot" data-slot="0">
+                    <canvas class="canvas-slot" data-slot="0"></canvas>
+                    <div class="viewport-label">SLOT 1</div>
+                    <div class="viewport-dropzone slot-dropzone" data-slot="0">
+                        <div class="dropzone-content">
+                            <div class="dropzone-icon">⬆</div>
+                            <div class="dropzone-text">DROP 3D FILE HERE</div>
+                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · SPLAT</div>
+                        </div>
+                    </div>
+                    <button class="slot-clear-btn" data-slot="0" title="Clear slot">✕</button>
+                </div>
+                <div class="comparison-slot slot-hidden" data-slot="1">
+                    <canvas class="canvas-slot" data-slot="1"></canvas>
+                    <div class="viewport-label">SLOT 2</div>
+                    <div class="viewport-dropzone slot-dropzone" data-slot="1">
+                        <div class="dropzone-content">
+                            <div class="dropzone-icon">⬆</div>
+                            <div class="dropzone-text">DROP 3D FILE HERE</div>
+                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · SPLAT</div>
+                        </div>
+                    </div>
+                    <button class="slot-clear-btn" data-slot="1" title="Clear slot">✕</button>
+                </div>
+                <div class="comparison-slot slot-hidden" data-slot="2">
+                    <canvas class="canvas-slot" data-slot="2"></canvas>
+                    <div class="viewport-label">SLOT 3</div>
+                    <div class="viewport-dropzone slot-dropzone" data-slot="2">
+                        <div class="dropzone-content">
+                            <div class="dropzone-icon">⬆</div>
+                            <div class="dropzone-text">DROP 3D FILE HERE</div>
+                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · SPLAT</div>
+                        </div>
+                    </div>
+                    <button class="slot-clear-btn" data-slot="2" title="Clear slot">✕</button>
+                </div>
+                <div class="comparison-slot slot-hidden" data-slot="3">
+                    <canvas class="canvas-slot" data-slot="3"></canvas>
+                    <div class="viewport-label">SLOT 4</div>
+                    <div class="viewport-dropzone slot-dropzone" data-slot="3">
+                        <div class="dropzone-content">
+                            <div class="dropzone-icon">⬆</div>
+                            <div class="dropzone-text">DROP 3D FILE HERE</div>
+                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · SPLAT</div>
+                        </div>
+                    </div>
+                    <button class="slot-clear-btn" data-slot="3" title="Clear slot">✕</button>
+                </div>
+            </div>
+
+            <!-- Loading overlay -->
+            <div id="loading-overlay" style="display:none;">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">LOADING...</div>
+            </div>
+        </section>
+
+        <!-- RIGHT SIDEBAR -->
+        <aside id="sidebar-right" class="sidebar">
+            <!-- Materials Panel -->
+            <div class="panel" id="panel-materials">
+                <div class="panel-header">
+                    <span class="panel-corner tl"></span>
+                    <span class="panel-corner tr"></span>
+                    <span class="panel-title">MATERIALS</span>
+                    <button class="panel-toggle" data-panel="panel-materials-body">−</button>
+                </div>
+                <div class="panel-body" id="panel-materials-body">
+                    <div id="material-list" class="material-list">
+                        <div class="empty-state">No model loaded</div>
+                    </div>
+                    <div id="material-editor" style="display:none;">
+                        <div class="material-editor-header">
+                            <span id="material-name">Material</span>
+                            <button class="hud-btn-sm" id="btn-material-back">← BACK</button>
+                        </div>
+                        <div class="control-row">
+                            <label>COLOR</label>
+                            <input type="color" id="mat-color" value="#ffffff" class="hud-color">
+                        </div>
+                        <div class="control-row">
+                            <label>ROUGHNESS</label>
+                            <input type="range" id="mat-roughness" min="0" max="1" step="0.01" value="0.5"
+                                class="hud-range">
+                            <span class="range-value" id="mat-roughness-val">0.50</span>
+                        </div>
+                        <div class="control-row">
+                            <label>METALNESS</label>
+                            <input type="range" id="mat-metalness" min="0" max="1" step="0.01" value="0"
+                                class="hud-range">
+                            <span class="range-value" id="mat-metalness-val">0.00</span>
+                        </div>
+                        <div class="control-row">
+                            <label>OPACITY</label>
+                            <input type="range" id="mat-opacity" min="0" max="1" step="0.01" value="1"
+                                class="hud-range">
+                            <span class="range-value" id="mat-opacity-val">1.00</span>
+                        </div>
+                        <div class="control-row">
+                            <label>EMISSIVE</label>
+                            <input type="color" id="mat-emissive" value="#000000" class="hud-color">
+                        </div>
+                        <div class="texture-uploads">
+                            <div class="control-row">
+                                <label>DIFFUSE MAP</label>
+                                <label class="hud-btn-sm tex-upload-btn">
+                                    <input type="file" accept="image/*" data-tex="map" hidden>
+                                    UPLOAD
+                                </label>
+                                <button class="hud-btn-sm tex-clear-btn" data-tex="map">✕</button>
+                            </div>
+                            <div class="control-row">
+                                <label>NORMAL MAP</label>
+                                <label class="hud-btn-sm tex-upload-btn">
+                                    <input type="file" accept="image/*" data-tex="normalMap" hidden>
+                                    UPLOAD
+                                </label>
+                                <button class="hud-btn-sm tex-clear-btn" data-tex="normalMap">✕</button>
+                            </div>
+                            <div class="control-row">
+                                <label>ROUGHNESS MAP</label>
+                                <label class="hud-btn-sm tex-upload-btn">
+                                    <input type="file" accept="image/*" data-tex="roughnessMap" hidden>
+                                    UPLOAD
+                                </label>
+                                <button class="hud-btn-sm tex-clear-btn" data-tex="roughnessMap">✕</button>
+                            </div>
+                        </div>
+                        <button class="hud-btn full-width" id="btn-material-reset">RESET MATERIAL</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lighting Panel -->
+            <div class="panel" id="panel-lighting">
+                <div class="panel-header">
+                    <span class="panel-corner tl"></span>
+                    <span class="panel-corner tr"></span>
+                    <span class="panel-title">LIGHTING</span>
+                    <button class="panel-toggle" data-panel="panel-lighting-body">−</button>
+                </div>
+                <div class="panel-body" id="panel-lighting-body">
+                    <div class="sub-section">
+                        <div class="sub-header">AMBIENT</div>
+                        <div class="control-row">
+                            <label>INTENSITY</label>
+                            <input type="range" id="light-ambient-intensity" min="0" max="3" step="0.05" value="0.4"
+                                class="hud-range">
+                            <span class="range-value" id="light-ambient-intensity-val">0.40</span>
+                        </div>
+                        <div class="control-row">
+                            <label>COLOR</label>
+                            <input type="color" id="light-ambient-color" value="#ffffff" class="hud-color">
+                        </div>
+                    </div>
+                    <div class="sub-section">
+                        <div class="sub-header">DIRECTIONAL</div>
+                        <div class="control-row">
+                            <label>INTENSITY</label>
+                            <input type="range" id="light-dir-intensity" min="0" max="5" step="0.05" value="1.0"
+                                class="hud-range">
+                            <span class="range-value" id="light-dir-intensity-val">1.00</span>
+                        </div>
+                        <div class="control-row">
+                            <label>COLOR</label>
+                            <input type="color" id="light-dir-color" value="#ffffff" class="hud-color">
+                        </div>
+                        <div class="control-row">
+                            <label>AZIMUTH</label>
+                            <input type="range" id="light-dir-azimuth" min="0" max="360" step="1" value="45"
+                                class="hud-range">
+                            <span class="range-value" id="light-dir-azimuth-val">45°</span>
+                        </div>
+                        <div class="control-row">
+                            <label>ELEVATION</label>
+                            <input type="range" id="light-dir-elevation" min="0" max="90" step="1" value="60"
+                                class="hud-range">
+                            <span class="range-value" id="light-dir-elevation-val">60°</span>
+                        </div>
+                    </div>
+                    <div class="sub-section">
+                        <div class="sub-header">POINT LIGHT</div>
+                        <div class="control-row">
+                            <label>ENABLED</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="light-point-enabled">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="control-row">
+                            <label>INTENSITY</label>
+                            <input type="range" id="light-point-intensity" min="0" max="5" step="0.05" value="1.0"
+                                class="hud-range">
+                            <span class="range-value" id="light-point-intensity-val">1.00</span>
+                        </div>
+                        <div class="control-row">
+                            <label>COLOR</label>
+                            <input type="color" id="light-point-color" value="#e63946" class="hud-color">
+                        </div>
+                    </div>
+                    <div class="control-row">
+                        <label>SHOW HELPERS</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="light-show-helpers">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="control-row">
+                        <label>ENV INT.</label>
+                        <input type="range" id="light-env-intensity" min="0" max="3" step="0.05" value="1.0"
+                            class="hud-range">
+                        <span class="range-value" id="light-env-intensity-val">1.00</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- BOTTOM BAR — Animation Controls -->
+    <footer id="bottom-bar">
+        <div class="animation-controls" id="animation-controls">
+            <div class="anim-left">
+                <button class="hud-btn-icon" id="btn-anim-play" title="Play" disabled>▶</button>
+                <button class="hud-btn-icon" id="btn-anim-pause" title="Pause" disabled style="display:none;">⏸</button>
+                <button class="hud-btn-icon" id="btn-anim-stop" title="Stop" disabled>⏹</button>
+                <button class="hud-btn-icon" id="btn-anim-loop" title="Toggle Loop" disabled>🔁</button>
+                <span class="anim-divider"></span>
+                <select id="anim-clip-select" class="hud-select" disabled>
+                    <option value="">NO ANIMATIONS</option>
+                </select>
+            </div>
+            <div class="anim-center">
+                <span class="anim-time" id="anim-time-current">0:00.0</span>
+                <input type="range" id="anim-timeline" min="0" max="100" step="0.1" value="0" class="hud-range timeline"
+                    disabled>
+                <span class="anim-time" id="anim-time-total">0:00.0</span>
+            </div>
+            <div class="anim-right">
+                <label class="speed-label">SPEED</label>
+                <input type="range" id="anim-speed" min="0.1" max="3" step="0.1" value="1" class="hud-range speed-range"
+                    disabled>
+                <span class="range-value" id="anim-speed-val">1.0x</span>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
