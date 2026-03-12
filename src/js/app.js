@@ -28,6 +28,7 @@ class App {
         this._bindFullscreen();
         this._bindKeyboard();
         this._bindSidebarToggles();
+        this._bindThemeToggle();
 
         this._showToast('Ready — drop a 3D file to begin', 'info');
     }
@@ -207,6 +208,34 @@ class App {
         });
     }
 
+    // ─── THEME TOGGLE ─────────────────────────────────────────────
+    _bindThemeToggle() {
+        const btn = document.getElementById('btn-theme-toggle');
+        const icon = btn.querySelector('.theme-icon');
+        const html = document.documentElement;
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('eye-theme') || 'dark';
+        this._applyTheme(savedTheme, html, icon);
+
+        btn.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            this._applyTheme(next, html, icon);
+            localStorage.setItem('eye-theme', next);
+        });
+    }
+
+    _applyTheme(theme, html, icon) {
+        html.setAttribute('data-theme', theme);
+        icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+
+        // Sync the 3D viewport background with theme
+        const bgColor = theme === 'dark' ? '#080808' : '#e8e8e8';
+        this.sceneManager.renderer.setClearColor(bgColor);
+        document.getElementById('scene-bg-color').value = bgColor;
+    }
+
     // ─── KEYBOARD SHORTCUTS ────────────────────────────────────────
     _bindKeyboard() {
         document.addEventListener('keydown', (e) => {
@@ -237,6 +266,9 @@ class App {
                     break;
                 case 'c':
                     document.getElementById('btn-comparison-toggle').click();
+                    break;
+                case 't':
+                    document.getElementById('btn-theme-toggle').click();
                     break;
             }
         });

@@ -66,6 +66,9 @@
                 <span class="btn-icon">◫</span>
                 <span>COMPARE</span>
             </button>
+            <button id="btn-theme-toggle" class="hud-btn-icon theme-toggle-btn" title="Toggle Light/Dark Mode">
+                <span class="theme-icon">🌙</span>
+            </button>
             <button id="btn-fullscreen" class="hud-btn" title="Fullscreen">
                 <span class="btn-icon">⛶</span>
             </button>
@@ -191,6 +194,12 @@
             <!-- Comparison mode viewports -->
             <div id="viewport-comparison" class="viewport-container comparison-grid" style="display:none;"
                 data-visible-slots="1">
+                <div class="comparison-toolbar" id="comparison-toolbar">
+                    <button id="btn-camera-lock" class="camera-lock-btn" title="Lock cameras together">
+                        <span class="lock-icon">🔓</span>
+                        <span>LOCK CAMERAS</span>
+                    </button>
+                </div>
                 <div class="comparison-slot" data-slot="0">
                     <canvas class="canvas-slot" data-slot="0"></canvas>
                     <div class="viewport-label">SLOT 1</div>

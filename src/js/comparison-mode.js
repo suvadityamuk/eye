@@ -13,7 +13,14 @@ export class ComparisonMode {
         this.slotFiles = [null, null, null, null];
         this.grid = document.getElementById('viewport-comparison');
         this.slotElements = document.querySelectorAll('.comparison-slot');
+
+        // Camera lock state
+        this.cameraLocked = false;
+        this._syncingCamera = false; // Guard flag to prevent infinite recursion
+        this._changeListeners = [null, null, null, null]; // Per-slot change listeners
+
         this._bindDropzones();
+        this._bindCameraLock();
         this._updateLayout();
     }
 
@@ -24,6 +31,10 @@ export class ComparisonMode {
         if (!this.slots[index]) {
             const canvas = this.slotElements[index].querySelector('.canvas-slot');
             this.slots[index] = new SceneManager(canvas);
+            // If camera lock is active, set up sync for the new slot
+            if (this.cameraLocked) {
+                this._setupCameraSyncForSlot(index);
+            }
         }
         return this.slots[index];
     }
@@ -76,6 +87,77 @@ export class ComparisonMode {
                 this.clearSlot(slot);
             });
         });
+    }
+
+    // ─── CAMERA LOCK ──────────────────────────────────────────────
+    _bindCameraLock() {
+        const btn = document.getElementById('btn-camera-lock');
+        btn.addEventListener('click', () => {
+            this.cameraLocked = !this.cameraLocked;
+            btn.classList.toggle('active', this.cameraLocked);
+
+            const icon = btn.querySelector('.lock-icon');
+            const label = btn.querySelector('span:last-child');
+
+            if (this.cameraLocked) {
+                icon.textContent = '🔗';
+                label.textContent = 'CAMERAS LOCKED';
+                this._setupCameraSync();
+            } else {
+                icon.textContent = '🔓';
+                label.textContent = 'LOCK CAMERAS';
+                this._removeCameraSync();
+            }
+        });
+    }
+
+    _setupCameraSync() {
+        for (let i = 0; i < 4; i++) {
+            this._setupCameraSyncForSlot(i);
+        }
+    }
+
+    _setupCameraSyncForSlot(index) {
+        const sm = this.slots[index];
+        if (!sm) return;
+
+        // Remove any existing listener first
+        if (this._changeListeners[index]) {
+            sm.controls.removeEventListener('change', this._changeListeners[index]);
+        }
+
+        const listener = () => this._syncCamerasFrom(index);
+        this._changeListeners[index] = listener;
+        sm.controls.addEventListener('change', listener);
+    }
+
+    _removeCameraSync() {
+        for (let i = 0; i < 4; i++) {
+            if (this.slots[i] && this._changeListeners[i]) {
+                this.slots[i].controls.removeEventListener('change', this._changeListeners[i]);
+                this._changeListeners[i] = null;
+            }
+        }
+    }
+
+    _syncCamerasFrom(sourceIndex) {
+        // Guard against infinite recursion: setting camera state triggers 'change' events
+        if (this._syncingCamera) return;
+        this._syncingCamera = true;
+
+        const sourceSM = this.slots[sourceIndex];
+        if (!sourceSM) { this._syncingCamera = false; return; }
+
+        const state = sourceSM.getCameraState();
+
+        for (let i = 0; i < 4; i++) {
+            if (i === sourceIndex) continue;
+            if (this.slots[i] && this.slotFiles[i]) {
+                this.slots[i].setCameraState(state);
+            }
+        }
+
+        this._syncingCamera = false;
     }
 
     _getLoadedCount() {
@@ -200,3 +282,4 @@ export class ComparisonMode {
         }, 3000);
     }
 }
+

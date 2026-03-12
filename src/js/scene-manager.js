@@ -235,6 +235,23 @@ export class SceneManager {
         }
     }
 
+    /** Get current camera state for synchronization */
+    getCameraState() {
+        return {
+            position: this.camera.position.clone(),
+            quaternion: this.camera.quaternion.clone(),
+            target: this.controls.target.clone(),
+        };
+    }
+
+    /** Apply camera state from another viewport (without triggering change events) */
+    setCameraState({ position, quaternion, target }) {
+        this.camera.position.copy(position);
+        this.camera.quaternion.copy(quaternion);
+        this.controls.target.copy(target);
+        this.controls.update();
+    }
+
     /** Get model stats */
     getModelStats() {
         if (!this.loadedModel) return null;

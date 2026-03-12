@@ -36,6 +36,109 @@
     --transition: 0.2s ease;
 }
 
+/* --- LIGHT THEME OVERRIDES --- */
+[data-theme="light"] {
+    --bg-primary: #e8e8e8;
+    --bg-panel: rgba(240, 240, 240, 0.95);
+    --bg-panel-solid: #f0f0f0;
+    --bg-input: #ddd;
+    --bg-hover: #d0d0d0;
+
+    --accent: #c62836;
+    --accent-dim: rgba(198, 40, 54, 0.25);
+    --accent-glow: rgba(198, 40, 54, 0.10);
+    --accent-bright: #e63946;
+
+    --text-primary: #1a1a1a;
+    --text-secondary: #555;
+    --text-dim: #777;
+    --text-highlight: #000;
+
+    --border: #bbb;
+    --border-accent: #c62836;
+    --border-dim: rgba(198, 40, 54, 0.2);
+}
+
+[data-theme="light"] body::before {
+    background-image:
+        linear-gradient(rgba(198, 40, 54, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(198, 40, 54, 0.04) 1px, transparent 1px);
+}
+
+[data-theme="light"] body::after {
+    background: repeating-linear-gradient(0deg,
+            transparent,
+            transparent 2px,
+            rgba(255, 255, 255, 0.03) 2px,
+            rgba(255, 255, 255, 0.03) 4px);
+}
+
+[data-theme="light"] .comparison-slot .viewport-label {
+    background: rgba(240, 240, 240, 0.7);
+}
+
+[data-theme="light"] .slot-clear-btn {
+    background: rgba(240, 240, 240, 0.7);
+}
+
+[data-theme="light"] #loading-overlay {
+    background: rgba(240, 240, 240, 0.85);
+}
+
+/* --- THEME TOGGLE --- */
+.theme-toggle-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-toggle-btn .theme-icon {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* --- COMPARISON TOOLBAR --- */
+.comparison-toolbar {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.camera-lock-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.camera-lock-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.camera-lock-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-glow);
+}
+
 /* --- RESET --- */
 *,
 *::before,
