@@ -261,6 +261,7 @@ export class ComparisonMode {
         this.active = true;
         document.getElementById('viewport-single').style.display = 'none';
         document.getElementById('viewport-comparison').style.display = '';
+        document.getElementById('comparison-toolbar').style.display = '';
         this._updateLayout();
     }
 
@@ -268,6 +269,7 @@ export class ComparisonMode {
         this.active = false;
         document.getElementById('viewport-single').style.display = '';
         document.getElementById('viewport-comparison').style.display = 'none';
+        document.getElementById('comparison-toolbar').style.display = 'none';
     }
 
     _showToast(message, type = 'info') {

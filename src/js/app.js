@@ -231,9 +231,10 @@ class App {
         icon.textContent = theme === 'dark' ? '🌙' : '☀️';
 
         // Sync the 3D viewport background with theme
-        const bgColor = theme === 'dark' ? '#080808' : '#e8e8e8';
+        const bgColor = theme === 'dark' ? 0x080808 : 0xe8e8e8;
+        const bgHex = theme === 'dark' ? '#080808' : '#e8e8e8';
         this.sceneManager.renderer.setClearColor(bgColor);
-        document.getElementById('scene-bg-color').value = bgColor;
+        document.getElementById('scene-bg-color').value = bgHex;
     }
 
     // ─── KEYBOARD SHORTCUTS ────────────────────────────────────────
