@@ -47,6 +47,9 @@ EYE is a **zero-build, single-page 3D object viewer** served as static files via
 - `loadFile(primaryFile, allFiles)` — Async. Returns `{ object, clips }`.
 - `getFormatType(filename)` — Returns format string or null.
 - Dynamically imports Three.js loaders as needed (GLTF, OBJ, PLY, FBX, STL, 3DM, Splat).
+- SPZ decoding via `@spz-loader/core` (WASM, loaded from jsDelivr CDN on demand).
+- SOG decoding via `fflate` (unzip) + canvas WebP image decoding.
+- `createGaussianPointCloud()` — Shared helper for Splat/SPZ/SOG point cloud rendering.
 - DRACO decoder auto-configured for compressed glTF.
 
 ### `src/js/comparison-mode.js`
@@ -69,7 +72,7 @@ EYE is a **zero-build, single-page 3D object viewer** served as static files via
 - Sidebar overlay transitions in media queries.
 
 ### `nginx.conf`
-- Serves `src/` as webroot. Includes MIME types for all 3D formats (`.glb`, `.gltf`, `.fbx`, `.3dm`, `.splat`, etc.) and `.wasm` for DRACO decoder.
+- Serves `src/` as webroot. Includes MIME types for all 3D formats (`.glb`, `.gltf`, `.fbx`, `.3dm`, `.splat`, `.spz`, `.sog`, etc.) and `.wasm` for DRACO decoder.
 
 ### `Dockerfile`
 - Single-stage: copies `src/` into `nginx:alpine` at `/usr/share/nginx/html/`.
@@ -116,5 +119,6 @@ gcloud run deploy eye-3d-viewer --source . --region us-central1 --allow-unauthen
 - **No build step** — edit files directly and refresh the browser.
 - **ES modules only** — all JS uses `import`/`export` via `<script type="importmap">`.
 - **Three.js loaded from CDN** — version pinned at r170 in the import map in `index.html`.
+- **SPZ loader from CDN** — `@spz-loader/core` (WASM-based) loaded from jsDelivr, pinned at v0.3.0.
 - **Client-side only** — no server-side processing. All file handling happens in the browser.
 - **IndexedDB for history** — no cookies, no localStorage. Data persists across sessions.

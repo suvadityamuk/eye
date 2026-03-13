@@ -19,6 +19,8 @@ const SUPPORTED_FORMATS = {
     'stl': 'stl',
     '3dm': '3dm',
     'splat': 'splat',
+    'spz': 'spz',
+    'sog': 'sog',
     'usd': 'usd', 'usda': 'usd', 'usdc': 'usd', 'usdz': 'usd',
 };
 
@@ -66,6 +68,8 @@ export async function loadFile(file, companionFiles = []) {
             case 'stl': return await loadSTL(url);
             case '3dm': return await load3DM(url);
             case 'splat': return await loadSplat(file);
+            case 'spz': return await loadSPZ(file);
+            case 'sog': return await loadSOG(file);
             default: throw new Error(`No loader for format: ${formatType}`);
         }
     } finally {
@@ -211,53 +215,16 @@ async function load3DM(url) {
     });
 }
 
-/** Gaussian Splat (.splat) — basic point cloud rendering */
-async function loadSplat(file) {
-    const buffer = await file.arrayBuffer();
-    const data = new DataView(buffer);
-
-    // .splat format: each splat = 32 bytes
-    // [x, y, z] float32 (12 bytes)
-    // [scale_x, scale_y, scale_z] float32 (12 bytes)  — we skip these for basic rendering
-    // [r, g, b, a] uint8 (4 bytes)
-    // [rot_x, rot_y, rot_z, rot_w] uint8 (4 bytes) — we skip these
-    const splatSize = 32;
-    const numSplats = Math.floor(buffer.byteLength / splatSize);
-
-    if (numSplats === 0) {
-        throw new Error('Invalid or empty .splat file');
-    }
-
-    const positions = new Float32Array(numSplats * 3);
-    const colors = new Float32Array(numSplats * 3);
-    const sizes = new Float32Array(numSplats);
-
-    for (let i = 0; i < numSplats; i++) {
-        const offset = i * splatSize;
-
-        // Position
-        positions[i * 3] = data.getFloat32(offset, true);
-        positions[i * 3 + 1] = data.getFloat32(offset + 4, true);
-        positions[i * 3 + 2] = data.getFloat32(offset + 8, true);
-
-        // Scale (use average for point size)
-        const sx = data.getFloat32(offset + 12, true);
-        const sy = data.getFloat32(offset + 16, true);
-        const sz = data.getFloat32(offset + 20, true);
-        sizes[i] = Math.max((Math.abs(sx) + Math.abs(sy) + Math.abs(sz)) / 3, 0.001);
-
-        // Color (RGBA uint8)
-        colors[i * 3] = data.getUint8(offset + 24) / 255;
-        colors[i * 3 + 1] = data.getUint8(offset + 25) / 255;
-        colors[i * 3 + 2] = data.getUint8(offset + 26) / 255;
-    }
-
+/**
+ * Create a THREE.Points object from Gaussian point cloud data.
+ * Shared by .splat, .spz, and .sog loaders.
+ */
+function createGaussianPointCloud(positions, colors, sizes) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
-    // Custom shader for variable-size points
     const material = new THREE.ShaderMaterial({
         uniforms: {
             pointScale: { value: 500.0 },
@@ -277,7 +244,6 @@ async function loadSplat(file) {
         fragmentShader: `
             varying vec3 vColor;
             void main() {
-                // Circular point with soft edge
                 vec2 coord = gl_PointCoord - vec2(0.5);
                 float dist = length(coord);
                 if (dist > 0.5) discard;
@@ -290,7 +256,175 @@ async function loadSplat(file) {
         depthWrite: false,
     });
 
-    const points = new THREE.Points(geometry, material);
+    return new THREE.Points(geometry, material);
+}
+
+/** Gaussian Splat (.splat) — basic point cloud rendering */
+async function loadSplat(file) {
+    const buffer = await file.arrayBuffer();
+    const data = new DataView(buffer);
+
+    // .splat format: each splat = 32 bytes
+    // [x, y, z] float32 (12 bytes)
+    // [scale_x, scale_y, scale_z] float32 (12 bytes)
+    // [r, g, b, a] uint8 (4 bytes)
+    // [rot_x, rot_y, rot_z, rot_w] uint8 (4 bytes)
+    const splatSize = 32;
+    const numSplats = Math.floor(buffer.byteLength / splatSize);
+
+    if (numSplats === 0) {
+        throw new Error('Invalid or empty .splat file');
+    }
+
+    const positions = new Float32Array(numSplats * 3);
+    const colors = new Float32Array(numSplats * 3);
+    const sizes = new Float32Array(numSplats);
+
+    for (let i = 0; i < numSplats; i++) {
+        const offset = i * splatSize;
+
+        positions[i * 3] = data.getFloat32(offset, true);
+        positions[i * 3 + 1] = data.getFloat32(offset + 4, true);
+        positions[i * 3 + 2] = data.getFloat32(offset + 8, true);
+
+        const sx = data.getFloat32(offset + 12, true);
+        const sy = data.getFloat32(offset + 16, true);
+        const sz = data.getFloat32(offset + 20, true);
+        sizes[i] = Math.max((Math.abs(sx) + Math.abs(sy) + Math.abs(sz)) / 3, 0.001);
+
+        colors[i * 3] = data.getUint8(offset + 24) / 255;
+        colors[i * 3 + 1] = data.getUint8(offset + 25) / 255;
+        colors[i * 3 + 2] = data.getUint8(offset + 26) / 255;
+    }
+
+    const points = createGaussianPointCloud(positions, colors, sizes);
+    return { object: points, clips: [] };
+}
+
+/** SPZ — Niantic's compressed Gaussian Splat format (WASM-decoded) */
+async function loadSPZ(file) {
+    const { loadSpz } = await import('@spz-loader/core');
+    const buffer = await file.arrayBuffer();
+    const cloud = await loadSpz(new Uint8Array(buffer));
+
+    if (!cloud || cloud.numPoints === 0) {
+        throw new Error('Invalid or empty .spz file');
+    }
+
+    const n = cloud.numPoints;
+    const positions = new Float32Array(n * 3);
+    const colors = new Float32Array(n * 3);
+    const sizes = new Float32Array(n);
+
+    // cloud.positions is Float32Array [x0,y0,z0, x1,y1,z1, ...]
+    // cloud.colors is Float32Array [r0,g0,b0, r1,g1,b1, ...] (0-255 range)
+    // cloud.scales is Float32Array [sx0,sy0,sz0, ...]
+    // cloud.alphas is Float32Array [a0, a1, ...] (0-255 range)
+    for (let i = 0; i < n; i++) {
+        // SPZ coordinate system is RUB (Right, Up, Back)
+        // Three.js is RUF (Right, Up, Forward) — negate Z
+        positions[i * 3] = cloud.positions[i * 3];
+        positions[i * 3 + 1] = cloud.positions[i * 3 + 1];
+        positions[i * 3 + 2] = -cloud.positions[i * 3 + 2];
+
+        colors[i * 3] = cloud.colors[i * 3] / 255;
+        colors[i * 3 + 1] = cloud.colors[i * 3 + 1] / 255;
+        colors[i * 3 + 2] = cloud.colors[i * 3 + 2] / 255;
+
+        const sx = cloud.scales[i * 3];
+        const sy = cloud.scales[i * 3 + 1];
+        const sz = cloud.scales[i * 3 + 2];
+        sizes[i] = Math.max((Math.abs(sx) + Math.abs(sy) + Math.abs(sz)) / 3, 0.001);
+    }
+
+    const points = createGaussianPointCloud(positions, colors, sizes);
+    return { object: points, clips: [] };
+}
+
+/** SOG — PlayCanvas Spatially Ordered Gaussians (zip of meta.json + WebP images) */
+async function loadSOG(file) {
+    const { unzipSync } = await import('fflate');
+    const buffer = await file.arrayBuffer();
+    const unzipped = unzipSync(new Uint8Array(buffer));
+
+    // Find and parse meta.json
+    const metaEntry = Object.keys(unzipped).find(k => k.endsWith('meta.json'));
+    if (!metaEntry) {
+        throw new Error('Invalid .sog file: missing meta.json');
+    }
+    const meta = JSON.parse(new TextDecoder().decode(unzipped[metaEntry]));
+
+    // Helper: decode a WebP image from the zip into raw RGBA pixel data
+    async function decodeImage(filename) {
+        const entry = Object.keys(unzipped).find(k => k.endsWith(filename));
+        if (!entry) return null;
+        const blob = new Blob([unzipped[entry]], { type: 'image/webp' });
+        const bitmap = await createImageBitmap(blob);
+        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bitmap, 0, 0);
+        return {
+            data: ctx.getImageData(0, 0, bitmap.width, bitmap.height).data,
+            width: bitmap.width,
+            height: bitmap.height,
+        };
+    }
+
+    // Decode required images
+    const [meansL, meansU, sh0Img] = await Promise.all([
+        decodeImage('means_l.webp'),
+        decodeImage('means_u.webp'),
+        decodeImage('sh0.webp'),
+    ]);
+
+    if (!meansL || !meansU || !sh0Img) {
+        throw new Error('Invalid .sog file: missing required WebP images (means_l, means_u, sh0)');
+    }
+
+    const numGaussians = meansL.width * meansL.height;
+    const positions = new Float32Array(numGaussians * 3);
+    const colors = new Float32Array(numGaussians * 3);
+    const sizes = new Float32Array(numGaussians);
+
+    // Position reconstruction from quantized 16-bit values
+    // means_l.webp stores lower 8 bits (RGB = x,y,z), means_u.webp stores upper 8 bits
+    // meta.json contains min/max ranges for dequantization
+    const posMin = meta.means?.min ?? [0, 0, 0];
+    const posMax = meta.means?.max ?? [1, 1, 1];
+
+    for (let i = 0; i < numGaussians; i++) {
+        const px = i * 4; // RGBA pixel offset
+
+        for (let axis = 0; axis < 3; axis++) {
+            const lo = meansL.data[px + axis];
+            const hi = meansU.data[px + axis];
+            const quantized = (hi << 8) | lo;
+            const t = quantized / 65535;
+            positions[i * 3 + axis] = posMin[axis] + t * (posMax[axis] - posMin[axis]);
+        }
+
+        // sh0.webp: RGB = base color, A = opacity
+        colors[i * 3] = sh0Img.data[px] / 255;
+        colors[i * 3 + 1] = sh0Img.data[px + 1] / 255;
+        colors[i * 3 + 2] = sh0Img.data[px + 2] / 255;
+
+        // Default point size (SOG doesn't directly give us sizes in a simple way)
+        sizes[i] = 0.01;
+    }
+
+    // Try to decode scales if available
+    const scalesImg = await decodeImage('scales.webp');
+    if (scalesImg) {
+        for (let i = 0; i < numGaussians; i++) {
+            const px = i * 4;
+            const sx = scalesImg.data[px] / 255;
+            const sy = scalesImg.data[px + 1] / 255;
+            const sz = scalesImg.data[px + 2] / 255;
+            sizes[i] = Math.max((sx + sy + sz) / 3, 0.001) * 0.1;
+        }
+    }
+
+    const points = createGaussianPointCloud(positions, colors, sizes);
     return { object: points, clips: [] };
 }
 
