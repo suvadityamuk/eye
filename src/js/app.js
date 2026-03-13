@@ -8,6 +8,7 @@ import { LightingPanel } from './lighting-panel.js';
 import { AnimationPanel } from './animation-panel.js';
 import { ComparisonMode } from './comparison-mode.js';
 import { HistoryPanel } from './history-panel.js';
+import { KeyboardControls } from './keyboard-controls.js';
 
 class App {
     constructor() {
@@ -19,6 +20,7 @@ class App {
         this.comparisonMode = new ComparisonMode();
         this.isComparisonMode = false;
         this.historyPanel = new HistoryPanel((file) => this._handleFiles([file]));
+        this.keyboardControls = new KeyboardControls();
 
         this._bindFileUpload();
         this._bindDropzone();
@@ -29,6 +31,8 @@ class App {
         this._bindKeyboard();
         this._bindSidebarToggles();
         this._bindThemeToggle();
+        this._bindHelpPane();
+        this._startKeyboardLoop();
 
         this._showToast('Ready — drop a 3D file to begin', 'info');
     }
@@ -243,6 +247,9 @@ class App {
             // Don't trigger if user is typing in an input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
 
+            // Skip single-key shortcuts when Shift is held (those are 6DOF controls)
+            if (e.shiftKey) return;
+
             switch (e.key) {
                 case ' ':
                     e.preventDefault();
@@ -271,8 +278,65 @@ class App {
                 case 't':
                     document.getElementById('btn-theme-toggle').click();
                     break;
+                case '?':
+                case 'h':
+                    this._toggleHelpPane();
+                    break;
+                case 'Escape':
+                    this._hideHelpPane();
+                    break;
             }
         });
+    }
+
+    // ─── HELP PANE ────────────────────────────────────────────────
+    _bindHelpPane() {
+        const overlay = document.getElementById('help-overlay');
+        const closeBtn = document.getElementById('help-close-btn');
+        const helpBtn = document.getElementById('btn-help');
+
+        closeBtn?.addEventListener('click', () => this._hideHelpPane());
+        overlay?.addEventListener('click', (e) => {
+            if (e.target === overlay) this._hideHelpPane();
+        });
+        helpBtn?.addEventListener('click', () => this._toggleHelpPane());
+    }
+
+    _toggleHelpPane() {
+        const overlay = document.getElementById('help-overlay');
+        if (overlay) {
+            overlay.classList.toggle('visible');
+        }
+    }
+
+    _hideHelpPane() {
+        const overlay = document.getElementById('help-overlay');
+        if (overlay) {
+            overlay.classList.remove('visible');
+        }
+    }
+
+    // ─── KEYBOARD MOVEMENT LOOP ───────────────────────────────────
+    _startKeyboardLoop() {
+        let lastTime = performance.now();
+
+        const loop = () => {
+            requestAnimationFrame(loop);
+            const now = performance.now();
+            const delta = (now - lastTime) / 1000;
+            lastTime = now;
+
+            const deltas = this.keyboardControls.update(delta);
+            if (!deltas) return;
+
+            if (this.isComparisonMode) {
+                this.comparisonMode.applyKeyboardMove(deltas);
+            } else {
+                this.sceneManager.applyKeyboardMove(deltas);
+            }
+        };
+
+        requestAnimationFrame(loop);
     }
 
     // ─── SIDEBAR TOGGLES (Responsive) ───────────────────────────────

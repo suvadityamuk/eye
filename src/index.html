@@ -72,6 +72,9 @@
             <button id="btn-fullscreen" class="hud-btn" title="Fullscreen">
                 <span class="btn-icon">⛶</span>
             </button>
+            <button id="btn-help" class="hud-btn-icon" title="Keyboard Shortcuts (?)">
+                <span>?</span>
+            </button>
             <button id="btn-sidebar-right" class="sidebar-toggle hud-btn-icon" title="Toggle settings">
                 <span>⚙</span>
             </button>
@@ -445,6 +448,124 @@
             </div>
         </div>
     </footer>
+
+    <!-- HELP OVERLAY -->
+    <div id="help-overlay" class="help-overlay">
+        <div class="help-content">
+            <div class="help-header">
+                <span class="help-title">KEYBOARD SHORTCUTS</span>
+                <button id="help-close-btn" class="help-close-btn">✕</button>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">NAVIGATION <span class="help-modifier">hold SHIFT</span></div>
+                <div class="help-grid">
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>Shift</kbd> + <kbd>W</kbd></span>
+                        <span class="help-action">Move forward</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>Shift</kbd> + <kbd>S</kbd></span>
+                        <span class="help-action">Move backward</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>Shift</kbd> + <kbd>A</kbd></span>
+                        <span class="help-action">Move left</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>Shift</kbd> + <kbd>D</kbd></span>
+                        <span class="help-action">Move right</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>Shift</kbd> + <kbd>E</kbd></span>
+                        <span class="help-action">Move up</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>Shift</kbd> + <kbd>Q</kbd></span>
+                        <span class="help-action">Move down</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">ROTATION & ZOOM</div>
+                <div class="help-grid">
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>←</kbd> <kbd>→</kbd></span>
+                        <span class="help-action">Yaw left / right</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>↑</kbd> <kbd>↓</kbd></span>
+                        <span class="help-action">Pitch up / down</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>Shift</kbd> + <kbd>Z</kbd> / <kbd>X</kbd></span>
+                        <span class="help-action">Roll CCW / CW</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>+</kbd> / <kbd>-</kbd></span>
+                        <span class="help-action">Zoom in / out</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">QUICK ACTIONS</div>
+                <div class="help-grid">
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>R</kbd></span>
+                        <span class="help-action">Reset camera</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>G</kbd></span>
+                        <span class="help-action">Toggle grid</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>W</kbd></span>
+                        <span class="help-action">Toggle wireframe</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>T</kbd></span>
+                        <span class="help-action">Toggle theme</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>C</kbd></span>
+                        <span class="help-action">Toggle compare mode</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>Space</kbd></span>
+                        <span class="help-action">Play / pause animation</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>?</kbd> / <kbd>H</kbd></span>
+                        <span class="help-action">Toggle this help</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">COMPARISON MODE</div>
+                <div class="help-grid">
+                    <div class="help-row">
+                        <span class="help-keys"><span class="help-note">Click slot</span></span>
+                        <span class="help-action">Select active viewport</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><span class="help-note">Unlocked</span></span>
+                        <span class="help-action">Keys control active viewport</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><span class="help-note">Locked</span></span>
+                        <span class="help-action">Keys control all viewports</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-footer">
+                Press <kbd>?</kbd> or <kbd>Esc</kbd> to close
+            </div>
+        </div>
+    </div>
 
     <script data-cfasync="false" type="module" src="js/app.js"></script>
 </body>

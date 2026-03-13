@@ -225,6 +225,74 @@ export class SceneManager {
         this.gridHelper.scale.setScalar(gridSize / 20);
     }
 
+    /** Apply keyboard-driven 6DOF movement deltas */
+    applyKeyboardMove({ translate, rotate, zoom }) {
+        // --- Translation: move camera + orbit target in camera-local space ---
+        if (translate && translate.lengthSq() > 0) {
+            const right = new THREE.Vector3();
+            const up = new THREE.Vector3();
+            const forward = new THREE.Vector3();
+
+            this.camera.getWorldDirection(forward);
+            right.crossVectors(forward, this.camera.up).normalize();
+            up.crossVectors(right, forward).normalize();
+
+            const offset = new THREE.Vector3();
+            offset.addScaledVector(right, translate.x);
+            offset.addScaledVector(up, translate.y);
+            offset.addScaledVector(forward, -translate.z);
+
+            this.camera.position.add(offset);
+            this.controls.target.add(offset);
+        }
+
+        // --- Rotation ---
+        if (rotate && rotate.lengthSq() > 0) {
+            const target = this.controls.target;
+            const offset = this.camera.position.clone().sub(target);
+            const distance = offset.length();
+
+            // Yaw (rotate.y): rotate camera position around world Y through target
+            if (Math.abs(rotate.y) > 0.0001) {
+                const yawQuat = new THREE.Quaternion().setFromAxisAngle(
+                    new THREE.Vector3(0, 1, 0), rotate.y
+                );
+                offset.applyQuaternion(yawQuat);
+            }
+
+            // Pitch (rotate.x): rotate camera position around camera-local right axis
+            if (Math.abs(rotate.x) > 0.0001) {
+                const forward = new THREE.Vector3();
+                this.camera.getWorldDirection(forward);
+                const rightAxis = new THREE.Vector3().crossVectors(forward, this.camera.up).normalize();
+                const pitchQuat = new THREE.Quaternion().setFromAxisAngle(rightAxis, rotate.x);
+                offset.applyQuaternion(pitchQuat);
+            }
+
+            this.camera.position.copy(target).add(offset);
+
+            // Roll (rotate.z): rotate the camera's up vector around the view direction
+            if (Math.abs(rotate.z) > 0.0001) {
+                const forward = new THREE.Vector3();
+                this.camera.getWorldDirection(forward);
+                const rollQuat = new THREE.Quaternion().setFromAxisAngle(forward, rotate.z);
+                this.camera.up.applyQuaternion(rollQuat).normalize();
+            }
+        }
+
+        // --- Zoom: dolly camera along view direction ---
+        if (zoom && Math.abs(zoom) > 0.001) {
+            const forward = new THREE.Vector3();
+            this.camera.getWorldDirection(forward);
+
+            const dist = this.camera.position.distanceTo(this.controls.target);
+            const dolly = Math.min(Math.abs(zoom), dist * 0.9) * Math.sign(zoom);
+            this.camera.position.addScaledVector(forward, dolly);
+        }
+
+        this.controls.update();
+    }
+
     resetCamera() {
         if (this.loadedModel) {
             this.fitCameraToModel(this.loadedModel);

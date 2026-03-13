@@ -19,8 +19,12 @@ export class ComparisonMode {
         this._syncingCamera = false; // Guard flag to prevent infinite recursion
         this._changeListeners = [null, null, null, null]; // Per-slot change listeners
 
+        // Active slot for keyboard controls (when cameras unlocked)
+        this.activeSlotIndex = 0;
+
         this._bindDropzones();
         this._bindCameraLock();
+        this._bindSlotSelection();
         this._updateLayout();
     }
 
@@ -87,6 +91,45 @@ export class ComparisonMode {
                 this.clearSlot(slot);
             });
         });
+    }
+
+    // ─── SLOT SELECTION ───────────────────────────────────────────
+    _bindSlotSelection() {
+        this.slotElements.forEach((el, i) => {
+            el.addEventListener('click', (e) => {
+                // Don't steal click from dropzone or clear button
+                if (e.target.closest('.slot-dropzone') || e.target.closest('.slot-clear-btn')) return;
+                this._setActiveSlot(i);
+            });
+        });
+    }
+
+    _setActiveSlot(index) {
+        this.activeSlotIndex = index;
+        this.slotElements.forEach((el, i) => {
+            el.classList.toggle('active-slot', i === index);
+        });
+    }
+
+    // ─── KEYBOARD MOVEMENT ROUTING ────────────────────────────────
+    /**
+     * Apply keyboard movement deltas.
+     * If cameras locked → apply to ALL loaded slots.
+     * If unlocked → apply to active slot only.
+     */
+    applyKeyboardMove(deltas) {
+        if (this.cameraLocked) {
+            for (let i = 0; i < 4; i++) {
+                if (this.slots[i] && this.slotFiles[i]) {
+                    this.slots[i].applyKeyboardMove(deltas);
+                }
+            }
+        } else {
+            const sm = this.slots[this.activeSlotIndex];
+            if (sm && this.slotFiles[this.activeSlotIndex]) {
+                sm.applyKeyboardMove(deltas);
+            }
+        }
     }
 
     // ─── CAMERA LOCK ──────────────────────────────────────────────
