@@ -243,12 +243,15 @@ class App {
 
     // ─── KEYBOARD SHORTCUTS ────────────────────────────────────────
     _bindKeyboard() {
+        // Keys that conflict with 6DOF movement (Shift+key)
+        const MOVEMENT_CONFLICT_KEYS = new Set(['w','a','s','d','e','q','z','x']);
+
         document.addEventListener('keydown', (e) => {
             // Don't trigger if user is typing in an input
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
 
-            // Skip single-key shortcuts when Shift is held (those are 6DOF controls)
-            if (e.shiftKey) return;
+            // Skip only the conflicting single-key shortcuts when Shift is held
+            if (e.shiftKey && MOVEMENT_CONFLICT_KEYS.has(e.key.toLowerCase())) return;
 
             switch (e.key) {
                 case ' ':
@@ -295,17 +298,41 @@ class App {
         const closeBtn = document.getElementById('help-close-btn');
         const helpBtn = document.getElementById('btn-help');
 
-        closeBtn?.addEventListener('click', () => this._hideHelpPane());
-        overlay?.addEventListener('click', (e) => {
-            if (e.target === overlay) this._hideHelpPane();
-        });
-        helpBtn?.addEventListener('click', () => this._toggleHelpPane());
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this._hideHelpPane();
+            });
+        }
+        if (overlay) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) this._hideHelpPane();
+            });
+        }
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => this._toggleHelpPane());
+        }
     }
 
     _toggleHelpPane() {
         const overlay = document.getElementById('help-overlay');
+        if (!overlay) return;
+        const isVisible = overlay.classList.contains('visible');
+        if (isVisible) {
+            this._hideHelpPane();
+        } else {
+            this._showHelpPane();
+        }
+    }
+
+    _showHelpPane() {
+        const overlay = document.getElementById('help-overlay');
         if (overlay) {
-            overlay.classList.toggle('visible');
+            overlay.style.display = 'flex';
+            // Force reflow for animation
+            void overlay.offsetHeight;
+            overlay.classList.add('visible');
         }
     }
 
@@ -313,6 +340,12 @@ class App {
         const overlay = document.getElementById('help-overlay');
         if (overlay) {
             overlay.classList.remove('visible');
+            // Hide after transition
+            setTimeout(() => {
+                if (!overlay.classList.contains('visible')) {
+                    overlay.style.display = 'none';
+                }
+            }, 250);
         }
     }
 

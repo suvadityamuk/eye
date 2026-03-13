@@ -72,9 +72,6 @@
             <button id="btn-fullscreen" class="hud-btn" title="Fullscreen">
                 <span class="btn-icon">⛶</span>
             </button>
-            <button id="btn-help" class="hud-btn-icon" title="Keyboard Shortcuts (?)">
-                <span>?</span>
-            </button>
             <button id="btn-sidebar-right" class="sidebar-toggle hud-btn-icon" title="Toggle settings">
                 <span>⚙</span>
             </button>
@@ -449,8 +446,13 @@
         </div>
     </footer>
 
+    <!-- HELP BUTTON (floating, bottom-right) -->
+    <button id="btn-help" class="help-fab" title="Keyboard Shortcuts (?)">
+        <span>?</span>
+    </button>
+
     <!-- HELP OVERLAY -->
-    <div id="help-overlay" class="help-overlay">
+    <div id="help-overlay" class="help-overlay" style="display:none;">
         <div class="help-content">
             <div class="help-header">
                 <span class="help-title">KEYBOARD SHORTCUTS</span>
