@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EYE — 3D Object Viewer</title>
     <meta name="description"
-        content="Browser-based 3D object viewer. Supports GLTF, GLB, OBJ, PLY, FBX, STL, Splat, SPZ, SOG formats.">
+        content="Browser-based 3D object viewer. Supports GLTF, GLB, OBJ, PLY, FBX, STL, PDB, Splat, SPZ, SOG formats.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -46,7 +46,7 @@
         <div class="top-bar-center">
             <label class="upload-btn" id="upload-btn">
                 <input type="file" id="file-input"
-                    accept=".gltf,.glb,.obj,.mtl,.ply,.fbx,.stl,.3dm,.splat,.spz,.sog,.usd,.usda,.usdc,.usdz" multiple hidden>
+                    accept=".gltf,.glb,.obj,.mtl,.ply,.fbx,.stl,.3dm,.pdb,.splat,.spz,.sog,.usd,.usda,.usdc,.usdz" multiple hidden>
                 <span class="upload-icon">⬆</span>
                 <span>UPLOAD FILE</span>
             </label>
@@ -58,6 +58,7 @@
                 <span class="badge">FBX</span>
                 <span class="badge">STL</span>
                 <span class="badge">3DM</span>
+                <span class="badge">PDB</span>
                 <span class="badge">SPLAT</span>
                 <span class="badge">SPZ</span>
                 <span class="badge">SOG</span>
@@ -189,7 +190,7 @@
                     <div class="dropzone-content">
                         <div class="dropzone-icon">⬆</div>
                         <div class="dropzone-text">DROP 3D FILE HERE</div>
-                        <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · SPLAT · SPZ · SOG</div>
+                        <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · PDB · SPLAT · SPZ · SOG</div>
                     </div>
                 </div>
             </div>
@@ -210,7 +211,7 @@
                         <div class="dropzone-content">
                             <div class="dropzone-icon">⬆</div>
                             <div class="dropzone-text">DROP 3D FILE HERE</div>
-                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · SPLAT · SPZ · SOG</div>
+                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · PDB · SPLAT · SPZ · SOG</div>
                         </div>
                     </div>
                     <button class="slot-clear-btn" data-slot="0" title="Clear slot">✕</button>
@@ -222,7 +223,7 @@
                         <div class="dropzone-content">
                             <div class="dropzone-icon">⬆</div>
                             <div class="dropzone-text">DROP 3D FILE HERE</div>
-                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · SPLAT · SPZ · SOG</div>
+                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · PDB · SPLAT · SPZ · SOG</div>
                         </div>
                     </div>
                     <button class="slot-clear-btn" data-slot="1" title="Clear slot">✕</button>
@@ -234,7 +235,7 @@
                         <div class="dropzone-content">
                             <div class="dropzone-icon">⬆</div>
                             <div class="dropzone-text">DROP 3D FILE HERE</div>
-                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · SPLAT · SPZ · SOG</div>
+                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · PDB · SPLAT · SPZ · SOG</div>
                         </div>
                     </div>
                     <button class="slot-clear-btn" data-slot="2" title="Clear slot">✕</button>
@@ -246,7 +247,7 @@
                         <div class="dropzone-content">
                             <div class="dropzone-icon">⬆</div>
                             <div class="dropzone-text">DROP 3D FILE HERE</div>
-                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · SPLAT · SPZ · SOG</div>
+                            <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · PDB · SPLAT · SPZ · SOG</div>
                         </div>
                     </div>
                     <button class="slot-clear-btn" data-slot="3" title="Clear slot">✕</button>

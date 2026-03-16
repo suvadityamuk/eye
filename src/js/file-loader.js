@@ -18,6 +18,7 @@ const SUPPORTED_FORMATS = {
     'fbx': 'fbx',
     'stl': 'stl',
     '3dm': '3dm',
+    'pdb': 'pdb',
     'splat': 'splat',
     'spz': 'spz',
     'sog': 'sog',
@@ -67,6 +68,7 @@ export async function loadFile(file, companionFiles = []) {
             case 'fbx': return await loadFBX(url);
             case 'stl': return await loadSTL(url);
             case '3dm': return await load3DM(url);
+            case 'pdb': return await loadPDB(url);
             case 'splat': return await loadSplat(file);
             case 'spz': return await loadSPZ(file);
             case 'sog': return await loadSOG(file);
@@ -211,6 +213,69 @@ async function load3DM(url) {
         loader.load(url, (object) => {
             prepareMaterials(object);
             resolve({ object, clips: [] });
+        }, undefined, reject);
+    });
+}
+
+/** PDB (Protein Data Bank) — ball-and-stick molecular visualization */
+async function loadPDB(url) {
+    const { PDBLoader } = await import('three/addons/loaders/PDBLoader.js');
+    const loader = new PDBLoader();
+
+    return new Promise((resolve, reject) => {
+        loader.load(url, (pdb) => {
+            const { geometryAtoms, geometryBonds, json } = pdb;
+            const group = new THREE.Group();
+
+            // --- Atoms: render as instanced spheres ---
+            const atomPositions = geometryAtoms.getAttribute('position');
+            const atomColors = geometryAtoms.getAttribute('color');
+            const numAtoms = atomPositions.count;
+
+            if (numAtoms > 0) {
+                const sphereGeo = new THREE.IcosahedronGeometry(0.3, 2);
+                const sphereMat = new THREE.MeshStandardMaterial({
+                    roughness: 0.4,
+                    metalness: 0.1,
+                });
+                const instancedAtoms = new THREE.InstancedMesh(sphereGeo, sphereMat, numAtoms);
+
+                const dummy = new THREE.Object3D();
+                const color = new THREE.Color();
+
+                for (let i = 0; i < numAtoms; i++) {
+                    dummy.position.set(
+                        atomPositions.getX(i),
+                        atomPositions.getY(i),
+                        atomPositions.getZ(i)
+                    );
+                    dummy.updateMatrix();
+                    instancedAtoms.setMatrixAt(i, dummy.matrix);
+                    color.setRGB(
+                        atomColors.getX(i),
+                        atomColors.getY(i),
+                        atomColors.getZ(i)
+                    );
+                    instancedAtoms.setColorAt(i, color);
+                }
+
+                instancedAtoms.instanceMatrix.needsUpdate = true;
+                instancedAtoms.instanceColor.needsUpdate = true;
+                group.add(instancedAtoms);
+            }
+
+            // --- Bonds: render as line segments ---
+            const bondPositions = geometryBonds.getAttribute('position');
+            if (bondPositions && bondPositions.count > 0) {
+                const bondMat = new THREE.LineBasicMaterial({
+                    color: 0x888888,
+                    linewidth: 1,
+                });
+                const bonds = new THREE.LineSegments(geometryBonds, bondMat);
+                group.add(bonds);
+            }
+
+            resolve({ object: group, clips: [] });
         }, undefined, reject);
     });
 }

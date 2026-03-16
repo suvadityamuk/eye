@@ -46,7 +46,7 @@ EYE is a **zero-build, single-page 3D object viewer** served as static files via
 ### `src/js/file-loader.js`
 - `loadFile(primaryFile, allFiles)` — Async. Returns `{ object, clips }`.
 - `getFormatType(filename)` — Returns format string or null.
-- Dynamically imports Three.js loaders as needed (GLTF, OBJ, PLY, FBX, STL, 3DM, Splat).
+- Dynamically imports Three.js loaders as needed (GLTF, OBJ, PLY, FBX, STL, 3DM, PDB, Splat).
 - SPZ decoding via `@spz-loader/core` (WASM, loaded from jsDelivr CDN on demand).
 - SOG decoding via `fflate` (unzip) + canvas WebP image decoding.
 - `createGaussianPointCloud()` — Shared helper for Splat/SPZ/SOG point cloud rendering.
@@ -72,7 +72,7 @@ EYE is a **zero-build, single-page 3D object viewer** served as static files via
 - Sidebar overlay transitions in media queries.
 
 ### `nginx.conf`
-- Serves `src/` as webroot. Includes MIME types for all 3D formats (`.glb`, `.gltf`, `.fbx`, `.3dm`, `.splat`, `.spz`, `.sog`, etc.) and `.wasm` for DRACO decoder.
+- Serves `src/` as webroot. Includes MIME types for all 3D formats (`.glb`, `.gltf`, `.fbx`, `.3dm`, `.pdb`, `.splat`, `.spz`, `.sog`, etc.) and `.wasm` for DRACO decoder.
 
 ### `Dockerfile`
 - Single-stage: copies `src/` into `nginx:alpine` at `/usr/share/nginx/html/`.

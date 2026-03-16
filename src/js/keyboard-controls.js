@@ -26,6 +26,14 @@ const ROTATION_KEYS = {
     'arrowdown': 'pitchDown',
 };
 
+// Opposing rotation keys — pressing one cancels the other
+const OPPOSING_ROTATION = {
+    'arrowleft': 'arrowright',
+    'arrowright': 'arrowleft',
+    'arrowup': 'arrowdown',
+    'arrowdown': 'arrowup',
+};
+
 const ZOOM_KEYS = {
     '=': 'zoomIn',
     '+': 'zoomIn',
@@ -44,9 +52,11 @@ export class KeyboardControls {
 
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onKeyUp = this._onKeyUp.bind(this);
+        this._onBlur = this._onBlur.bind(this);
 
         document.addEventListener('keydown', this._onKeyDown);
         document.addEventListener('keyup', this._onKeyUp);
+        window.addEventListener('blur', this._onBlur);
     }
 
     _shouldIgnore(e) {
@@ -66,6 +76,9 @@ export class KeyboardControls {
         // Rotation keys (no shift needed)
         if (ROTATION_KEYS[key]) {
             e.preventDefault();
+            // Cancel the opposing direction if it was stuck
+            const opposing = OPPOSING_ROTATION[key];
+            if (opposing) this.pressedKeys.delete(opposing);
             this.pressedKeys.add(key);
         }
         // Zoom keys (no shift needed)
@@ -143,9 +156,15 @@ export class KeyboardControls {
         return { translate, rotate, zoom };
     }
 
+    _onBlur() {
+        // Clear all keys when window loses focus to prevent stuck keys
+        this.pressedKeys.clear();
+    }
+
     dispose() {
         document.removeEventListener('keydown', this._onKeyDown);
         document.removeEventListener('keyup', this._onKeyUp);
+        window.removeEventListener('blur', this._onBlur);
         this.pressedKeys.clear();
     }
 }
