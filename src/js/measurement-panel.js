@@ -22,6 +22,7 @@ export class MeasurementPanel {
         this.scaleInput = document.getElementById('measure-scale');
         this.scaleLabel = document.getElementById('measure-scale-label');
         this.precisionSelect = document.getElementById('measure-precision');
+        this.snapToggle = document.getElementById('toggle-snap');
         this.bboxToggle = document.getElementById('toggle-bbox');
         this.bboxDimensions = document.getElementById('bbox-dimensions');
         this.measureList = document.getElementById('measurement-list');
@@ -63,6 +64,11 @@ export class MeasurementPanel {
             if (e.target.checked) {
                 this._updateBBoxDimensions();
             }
+        });
+
+        // Snap toggle
+        this.snapToggle.addEventListener('change', (e) => {
+            this.manager.setSnap(e.target.checked);
         });
 
         // Clear all
@@ -191,10 +197,11 @@ export class MeasurementPanel {
         }
         this._refreshList(newManager.measurements);
 
-        // Sync unit/scale/precision from this panel to the new manager
+        // Sync unit/scale/precision/snap from this panel to the new manager
         newManager.setUnit(this.unitSelect.value);
         newManager.setScale(parseFloat(this.scaleInput.value) || 1);
         newManager.setPrecision(parseInt(this.precisionSelect.value));
+        newManager.setSnap(this.snapToggle.checked);
     }
 
     /** Toggle measurement mode (for keyboard shortcut) */

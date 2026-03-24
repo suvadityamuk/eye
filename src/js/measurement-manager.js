@@ -47,6 +47,12 @@ export class MeasurementManager {
         this.scaleFactor = 1;  // user-defined: 1 scene unit = scaleFactor * base unit
         this.precision = 2;
 
+        // Vertex snapping
+        this.snapEnabled = true;
+        this._snapIndicator = null;     // THREE.Mesh ring shown when near a vertex
+        this._snappedPoint = null;      // Current snapped position
+        this._SNAP_RADIUS_PX = 18;      // Screen-space snap threshold in pixels
+
         // Raycaster
         this._raycaster = new THREE.Raycaster();
         this._mouse = new THREE.Vector2();
@@ -60,9 +66,20 @@ export class MeasurementManager {
             opacity: 0.85,
         });
 
+        // Snap indicator geometry (ring)
+        this._snapRingGeo = new THREE.RingGeometry(0.7, 1, 16);
+        this._snapRingMat = new THREE.MeshBasicMaterial({
+            color: 0x00e5ff,
+            side: THREE.DoubleSide,
+            depthTest: false,
+            transparent: true,
+            opacity: 0.9,
+        });
+
         // Bound event handlers
         this._onPointerDown = this._handlePointerDown.bind(this);
         this._onPointerUp = this._handlePointerUp.bind(this);
+        this._onPointerMove = this._handlePointerMove.bind(this);
         this._pointerDownPos = { x: 0, y: 0 };
 
         // Callbacks
@@ -79,16 +96,19 @@ export class MeasurementManager {
         if (active) {
             target.addEventListener('pointerdown', this._onPointerDown);
             target.addEventListener('pointerup', this._onPointerUp);
+            target.addEventListener('pointermove', this._onPointerMove);
             target.style.cursor = 'crosshair';
             // Disable orbit controls
             this.sm.controls.enabled = false;
         } else {
             target.removeEventListener('pointerdown', this._onPointerDown);
             target.removeEventListener('pointerup', this._onPointerUp);
+            target.removeEventListener('pointermove', this._onPointerMove);
             target.style.cursor = '';
             this.sm.controls.enabled = true;
-            // Clear pending point if any
+            // Clear pending point and snap indicator
             this._clearPending();
+            this._hideSnapIndicator();
         }
         this.onActiveChanged?.(active);
     }
@@ -118,24 +138,14 @@ export class MeasurementManager {
             return;
         }
 
-        // Get mouse position relative to canvas
-        const rect = this.sm.canvas.getBoundingClientRect();
-        this._mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        this._mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-        // Raycast into the scene
-        this._raycaster.setFromCamera(this._mouse, this.sm.camera);
-
-        // Collect all meshes from the model
-        const meshes = [];
-        this.sm.loadedModel.traverse(child => {
-            if (child.isMesh) meshes.push(child);
-        });
-
-        const intersects = this._raycaster.intersectObjects(meshes, false);
-        if (intersects.length === 0) return;
-
-        const point = intersects[0].point.clone();
+        // Use snapped point if available, otherwise raycast
+        let point;
+        if (this.snapEnabled && this._snappedPoint) {
+            point = this._snappedPoint.clone();
+        } else {
+            point = this._raycastPoint(e);
+        }
+        if (!point) return;
 
         if (!this.pendingPoint) {
             // First point
@@ -152,6 +162,137 @@ export class MeasurementManager {
             this._createMeasurement(this.pendingPoint, point);
             this._clearPending();
         }
+        this._hideSnapIndicator();
+    }
+
+    // ─── POINTERMOVE / SNAP PREVIEW ──────────────────────────────
+
+    _handlePointerMove(e) {
+        if (!this.active || !this.sm.loadedModel || !this.snapEnabled) {
+            this._hideSnapIndicator();
+            return;
+        }
+        if (this._isPointCloud()) return;
+
+        const hit = this._raycastHit(e);
+        if (!hit) {
+            this._hideSnapIndicator();
+            this._snappedPoint = null;
+            return;
+        }
+
+        const snapped = this._findSnapVertex(hit, e);
+        if (snapped) {
+            this._snappedPoint = snapped;
+            this._showSnapIndicator(snapped);
+        } else {
+            this._snappedPoint = null;
+            this._hideSnapIndicator();
+        }
+    }
+
+    // ─── RAYCAST HELPERS ─────────────────────────────────────────
+
+    /** Raycast and return the first intersection point (Vector3), or null */
+    _raycastPoint(e) {
+        const hit = this._raycastHit(e);
+        return hit ? hit.point.clone() : null;
+    }
+
+    /** Raycast and return the full intersection object, or null */
+    _raycastHit(e) {
+        const rect = this.sm.canvas.getBoundingClientRect();
+        this._mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        this._mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        this._raycaster.setFromCamera(this._mouse, this.sm.camera);
+
+        const meshes = [];
+        this.sm.loadedModel.traverse(child => {
+            if (child.isMesh) meshes.push(child);
+        });
+
+        const intersects = this._raycaster.intersectObjects(meshes, false);
+        return intersects.length > 0 ? intersects[0] : null;
+    }
+
+    // ─── VERTEX SNAPPING ─────────────────────────────────────────
+
+    /**
+     * Given a raycast hit, check if any vertex of the hit face is within
+     * the snap radius in screen space. Returns the world-space Vector3
+     * of the closest vertex, or null.
+     */
+    _findSnapVertex(hit, pointerEvent) {
+        const face = hit.face;
+        const geo = hit.object.geometry;
+        if (!face || !geo) return null;
+
+        const posAttr = geo.attributes.position;
+        if (!posAttr) return null;
+
+        // Get the mesh's world matrix for transforming local vertices
+        const worldMatrix = hit.object.matrixWorld;
+        const canvasRect = this.sm.canvas.getBoundingClientRect();
+        const pointerX = pointerEvent.clientX - canvasRect.left;
+        const pointerY = pointerEvent.clientY - canvasRect.top;
+
+        const _v = new THREE.Vector3();
+        let bestDist = Infinity;
+        let bestPoint = null;
+
+        for (const idx of [face.a, face.b, face.c]) {
+            // Get vertex in local space
+            _v.fromBufferAttribute(posAttr, idx);
+            // Transform to world space
+            _v.applyMatrix4(worldMatrix);
+
+            // Project to screen space (NDC → pixel)
+            const projected = _v.clone().project(this.sm.camera);
+            const screenX = (projected.x * 0.5 + 0.5) * canvasRect.width;
+            const screenY = (-projected.y * 0.5 + 0.5) * canvasRect.height;
+
+            const dist = Math.sqrt(
+                (screenX - pointerX) ** 2 + (screenY - pointerY) ** 2
+            );
+
+            if (dist < this._SNAP_RADIUS_PX && dist < bestDist) {
+                bestDist = dist;
+                bestPoint = _v.clone();
+            }
+        }
+
+        return bestPoint;
+    }
+
+    _showSnapIndicator(worldPos) {
+        if (!this._snapIndicator) {
+            this._snapIndicator = new THREE.Mesh(this._snapRingGeo, this._snapRingMat);
+            this._snapIndicator.renderOrder = 1001;
+            this.sm.scene.add(this._snapIndicator);
+        }
+
+        this._snapIndicator.position.copy(worldPos);
+
+        // Scale relative to model size
+        let scale = 0.02;
+        if (this.sm.loadedModel) {
+            const box = new THREE.Box3().setFromObject(this.sm.loadedModel);
+            const size = box.getSize(new THREE.Vector3());
+            scale = Math.max(size.x, size.y, size.z) * 0.012;
+        }
+        this._snapIndicator.scale.setScalar(scale);
+
+        // Billboard: face the camera
+        this._snapIndicator.quaternion.copy(this.sm.camera.quaternion);
+        this._snapIndicator.visible = true;
+    }
+
+    _hideSnapIndicator() {
+        if (this._snapIndicator) {
+            this._snapIndicator.visible = false;
+        }
+        this._snappedPoint = null;
     }
 
     _isPointCloud() {
@@ -395,6 +536,7 @@ export class MeasurementManager {
         this.measurements = [];
         this._clearPending();
         this._hideBoundingBox();
+        this._hideSnapIndicator();
         this.onMeasurementRemoved?.(this.measurements);
     }
 
@@ -410,6 +552,20 @@ export class MeasurementManager {
         this.clearAll();
         this._markerGeo.dispose();
         this._markerMat.dispose();
+        this._snapRingGeo.dispose();
+        this._snapRingMat.dispose();
+        if (this._snapIndicator) {
+            this.sm.scene.remove(this._snapIndicator);
+            this._snapIndicator = null;
+        }
+    }
+
+    /** Enable/disable vertex snapping */
+    setSnap(enabled) {
+        this.snapEnabled = enabled;
+        if (!enabled) {
+            this._hideSnapIndicator();
+        }
     }
 
     // ─── UTILITIES ────────────────────────────────────────────────
