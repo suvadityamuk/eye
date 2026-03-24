@@ -263,6 +263,71 @@
 
         <!-- RIGHT SIDEBAR -->
         <aside id="sidebar-right" class="sidebar">
+            <!-- Measurement Panel -->
+            <div class="panel" id="panel-measurement">
+                <div class="panel-header">
+                    <span class="panel-corner tl"></span>
+                    <span class="panel-corner tr"></span>
+                    <span class="panel-title">MEASURE</span>
+                    <button class="panel-toggle" data-panel="panel-measurement-body">−</button>
+                </div>
+                <div class="panel-body" id="panel-measurement-body">
+                    <button class="hud-btn full-width" id="btn-measure-toggle" style="margin-top:0;">
+                        <span class="btn-icon">📏</span>
+                        <span>START MEASURING</span>
+                    </button>
+                    <div class="sub-section">
+                        <div class="sub-header">UNITS</div>
+                        <div class="control-row">
+                            <label>UNIT</label>
+                            <select id="measure-unit" class="hud-select">
+                                <option value="scene">Scene Units</option>
+                                <option value="mm">Millimeters</option>
+                                <option value="cm">Centimeters</option>
+                                <option value="m">Meters</option>
+                                <option value="in">Inches</option>
+                                <option value="ft">Feet</option>
+                                <option value="yd">Yards</option>
+                            </select>
+                        </div>
+                        <div class="control-row">
+                            <label>1 UNIT =</label>
+                            <input type="number" id="measure-scale" class="hud-number" value="1" min="0.0001" step="0.1">
+                            <span class="range-value" id="measure-scale-label">su</span>
+                        </div>
+                        <div class="control-row">
+                            <label>PRECISION</label>
+                            <select id="measure-precision" class="hud-select">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="sub-section">
+                        <div class="sub-header">BOUNDING BOX</div>
+                        <div class="control-row">
+                            <label>SHOW BOUNDS</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-bbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div id="bbox-dimensions" class="bbox-dimensions" style="display:none;">
+                        </div>
+                    </div>
+                    <div class="sub-section">
+                        <div class="sub-header">MEASUREMENTS</div>
+                        <div id="measurement-list" class="measurement-list">
+                            <div class="empty-state">No measurements</div>
+                        </div>
+                    </div>
+                    <button class="hud-btn full-width" id="btn-measure-clear">CLEAR ALL</button>
+                </div>
+            </div>
+
             <!-- Materials Panel -->
             <div class="panel" id="panel-materials">
                 <div class="panel-header">
@@ -537,6 +602,10 @@
                     <div class="help-row">
                         <span class="help-keys"><kbd>C</kbd></span>
                         <span class="help-action">Toggle compare mode</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>M</kbd></span>
+                        <span class="help-action">Toggle measure mode</span>
                     </div>
                     <div class="help-row">
                         <span class="help-keys"><kbd>Space</kbd></span>

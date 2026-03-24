@@ -3,6 +3,7 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 
 export class SceneManager {
     constructor(canvas) {
@@ -14,6 +15,7 @@ export class SceneManager {
         this.animationClips = [];
 
         this._initRenderer();
+        this._initLabelRenderer();
         this._initCamera();
         this._initControls();
         this._initLights();
@@ -38,6 +40,18 @@ export class SceneManager {
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         this.renderer.setClearColor(0x080808);
         this._resize();
+    }
+
+    _initLabelRenderer() {
+        this.labelRenderer = new CSS2DRenderer();
+        this.labelRenderer.setSize(this.canvas.clientWidth || 1, this.canvas.clientHeight || 1);
+        this.labelRenderer.domElement.style.position = 'absolute';
+        this.labelRenderer.domElement.style.top = '0';
+        this.labelRenderer.domElement.style.left = '0';
+        this.labelRenderer.domElement.style.pointerEvents = 'none';
+        this.labelRenderer.domElement.classList.add('css2d-overlay');
+        // Insert overlay right after the canvas
+        this.canvas.parentElement?.appendChild(this.labelRenderer.domElement);
     }
 
     _initCamera() {
@@ -145,6 +159,9 @@ export class SceneManager {
             this.canvas.height !== Math.floor(h * pixelRatio);
         if (needsResize) {
             this.renderer.setSize(w, h, false);
+            if (this.labelRenderer) {
+                this.labelRenderer.setSize(w, h);
+            }
             if (this.camera) {
                 this.camera.aspect = w / h;
                 this.camera.updateProjectionMatrix();
@@ -160,6 +177,7 @@ export class SceneManager {
         if (this.animationMixer) this.animationMixer.update(delta);
         if (this.dirLightHelper && this.dirLightHelper.visible) this.dirLightHelper.update();
         this.renderer.render(this.scene, this.camera);
+        if (this.labelRenderer) this.labelRenderer.render(this.scene, this.camera);
     }
 
     /** Set the loaded object */
@@ -390,10 +408,19 @@ export class SceneManager {
         );
     }
 
+    /** Get model bounding box */
+    getModelBoundingBox() {
+        if (!this.loadedModel) return null;
+        return new THREE.Box3().setFromObject(this.loadedModel);
+    }
+
     dispose() {
         this.clearModel();
         this.renderer.dispose();
         this.controls.dispose();
+        if (this.labelRenderer) {
+            this.labelRenderer.domElement.remove();
+        }
         if (this.envMap) this.envMap.dispose();
     }
 }

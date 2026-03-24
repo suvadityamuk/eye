@@ -5,12 +5,14 @@
  */
 import { SceneManager } from './scene-manager.js';
 import { loadFile, isUSDFormat, getFormatType, formatFileSize } from './file-loader.js';
+import { MeasurementManager } from './measurement-manager.js';
 
 export class ComparisonMode {
     constructor() {
         this.active = false;
         this.slots = [null, null, null, null]; // SceneManager per slot (lazy)
         this.slotFiles = [null, null, null, null];
+        this.measureManagers = [null, null, null, null]; // MeasurementManager per slot (lazy)
         this.grid = document.getElementById('viewport-comparison');
         this.slotElements = document.querySelectorAll('.comparison-slot');
 
@@ -21,6 +23,9 @@ export class ComparisonMode {
 
         // Active slot for keyboard controls (when cameras unlocked)
         this.activeSlotIndex = 0;
+
+        // Callback when active slot changes (for measurement panel context switching)
+        this.onActiveSlotChanged = null; // (slotIndex, measurementManager) => void
 
         this._bindDropzones();
         this._bindCameraLock();
@@ -35,6 +40,7 @@ export class ComparisonMode {
         if (!this.slots[index]) {
             const canvas = this.slotElements[index].querySelector('.canvas-slot');
             this.slots[index] = new SceneManager(canvas);
+            this.measureManagers[index] = new MeasurementManager(this.slots[index]);
             // If camera lock is active, set up sync for the new slot
             if (this.cameraLocked) {
                 this._setupCameraSyncForSlot(index);
@@ -109,6 +115,10 @@ export class ComparisonMode {
         this.slotElements.forEach((el, i) => {
             el.classList.toggle('active-slot', i === index);
         });
+        // Notify listeners (e.g. measurement panel) 
+        if (this.measureManagers[index]) {
+            this.onActiveSlotChanged?.(index, this.measureManagers[index]);
+        }
     }
 
     // ─── KEYBOARD MOVEMENT ROUTING ────────────────────────────────
@@ -288,6 +298,9 @@ export class ComparisonMode {
     clearSlot(slotIndex) {
         if (this.slots[slotIndex]) {
             this.slots[slotIndex].clearModel();
+        }
+        if (this.measureManagers[slotIndex]) {
+            this.measureManagers[slotIndex].clearAll();
         }
         const dropzone = document.querySelector(`.slot-dropzone[data-slot="${slotIndex}"]`);
         const clearBtn = document.querySelector(`.slot-clear-btn[data-slot="${slotIndex}"]`);

@@ -1775,3 +1775,119 @@ kbd {
 [data-theme="light"] .help-footer {
     border-top-color: rgba(0, 0, 0, 0.06);
 }
+
+/* ============================================================
+   MEASUREMENT SYSTEM
+   ============================================================ */
+
+/* --- Number Input --- */
+.hud-number {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 4px 6px;
+    outline: none;
+    width: 64px;
+    flex-shrink: 0;
+}
+
+.hud-number:focus {
+    border-color: var(--accent);
+}
+
+/* --- CSS2D Label Overlay --- */
+.css2d-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.measure-label-2d {
+    background: rgba(10, 10, 10, 0.85);
+    border: 1px solid var(--accent);
+    color: var(--accent-bright);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    white-space: nowrap;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.measure-label-2d.bbox-label {
+    background: rgba(10, 10, 10, 0.75);
+    border-style: dashed;
+    font-size: 9px;
+    box-shadow: none;
+}
+
+[data-theme="light"] .measure-label-2d {
+    background: rgba(240, 240, 240, 0.9);
+    color: var(--accent);
+}
+
+[data-theme="light"] .measure-label-2d.bbox-label {
+    background: rgba(240, 240, 240, 0.8);
+}
+
+/* --- Measurement List --- */
+.measurement-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.measurement-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.measurement-item:last-child {
+    border-bottom: none;
+}
+
+.measurement-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.measurement-number {
+    font-size: 9px;
+    color: var(--accent);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.measurement-distance {
+    font-size: 10px;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.measurement-delete {
+    flex-shrink: 0;
+    padding: 2px 6px !important;
+    font-size: 9px !important;
+}
+
+/* --- Bounding Box Dimensions --- */
+.bbox-dimensions {
+    margin-top: 4px;
+}
+
+.bbox-dimensions .info-row {
+    padding: 2px 0;
+}

@@ -9,6 +9,7 @@ import { AnimationPanel } from './animation-panel.js';
 import { ComparisonMode } from './comparison-mode.js';
 import { HistoryPanel } from './history-panel.js';
 import { KeyboardControls } from './keyboard-controls.js';
+import { MeasurementPanel } from './measurement-panel.js';
 
 class App {
     constructor() {
@@ -21,6 +22,13 @@ class App {
         this.isComparisonMode = false;
         this.historyPanel = new HistoryPanel((file) => this._handleFiles([file]));
         this.keyboardControls = new KeyboardControls();
+        this.measurementPanel = new MeasurementPanel(this.sceneManager);
+        this._mainMeasureManager = this.measurementPanel.manager;  // Store for comparison mode switching
+
+        // Wire comparison mode slot changes to measurement panel
+        this.comparisonMode.onActiveSlotChanged = (slotIndex, measureManager) => {
+            this.measurementPanel.setManager(measureManager);
+        };
 
         this._bindFileUpload();
         this._bindDropzone();
@@ -114,6 +122,7 @@ class App {
             this._updateFileInfo(primaryFile);
             this.materialPanel.refresh();
             this.animationPanel.refresh();
+            this.measurementPanel.onModelLoaded();
 
             // Save to local history
             this.historyPanel.saveToHistory(primaryFile);
@@ -195,8 +204,16 @@ class App {
             btn.classList.toggle('active', this.isComparisonMode);
             if (this.isComparisonMode) {
                 this.comparisonMode.activate();
+                // Deactivate measurement mode and switch to slot 0's manager
+                this.measurementPanel.manager.setActive(false);
+                const slotMgr = this.comparisonMode.measureManagers[this.comparisonMode.activeSlotIndex];
+                if (slotMgr) {
+                    this.measurementPanel.setManager(slotMgr);
+                }
             } else {
                 this.comparisonMode.deactivate();
+                // Reconnect measurement panel to the main viewport's manager
+                this.measurementPanel.setManager(this._mainMeasureManager);
             }
         });
     }
@@ -278,6 +295,9 @@ class App {
                 case 'c':
                     document.getElementById('btn-comparison-toggle').click();
                     break;
+                case 'm':
+                    this.measurementPanel.toggleMeasureMode();
+                    break;
                 case 't':
                     document.getElementById('btn-theme-toggle').click();
                     break;
@@ -286,7 +306,12 @@ class App {
                     this._toggleHelpPane();
                     break;
                 case 'Escape':
-                    this._hideHelpPane();
+                    // Exit measure mode first, then close help
+                    if (this.measurementPanel.manager.active) {
+                        this.measurementPanel.manager.setActive(false);
+                    } else {
+                        this._hideHelpPane();
+                    }
                     break;
             }
         });
