@@ -48,7 +48,6 @@ export class SceneManager {
         this.labelRenderer.domElement.style.position = 'absolute';
         this.labelRenderer.domElement.style.top = '0';
         this.labelRenderer.domElement.style.left = '0';
-        this.labelRenderer.domElement.style.pointerEvents = 'none';
         this.labelRenderer.domElement.classList.add('css2d-overlay');
         // Insert overlay right after the canvas
         this.canvas.parentElement?.appendChild(this.labelRenderer.domElement);

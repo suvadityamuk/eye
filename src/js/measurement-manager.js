@@ -60,8 +60,10 @@ export class MeasurementManager {
             opacity: 0.85,
         });
 
-        // Bound click handler
-        this._onCanvasClick = this._handleClick.bind(this);
+        // Bound event handlers
+        this._onPointerDown = this._handlePointerDown.bind(this);
+        this._onPointerUp = this._handlePointerUp.bind(this);
+        this._pointerDownPos = { x: 0, y: 0 };
 
         // Callbacks
         this.onMeasurementAdded = null;   // (measurements) => void
@@ -73,14 +75,17 @@ export class MeasurementManager {
 
     setActive(active) {
         this.active = active;
+        const target = this.sm.canvas;
         if (active) {
-            this.sm.canvas.addEventListener('click', this._onCanvasClick);
-            this.sm.canvas.style.cursor = 'crosshair';
+            target.addEventListener('pointerdown', this._onPointerDown);
+            target.addEventListener('pointerup', this._onPointerUp);
+            target.style.cursor = 'crosshair';
             // Disable orbit controls
             this.sm.controls.enabled = false;
         } else {
-            this.sm.canvas.removeEventListener('click', this._onCanvasClick);
-            this.sm.canvas.style.cursor = '';
+            target.removeEventListener('pointerdown', this._onPointerDown);
+            target.removeEventListener('pointerup', this._onPointerUp);
+            target.style.cursor = '';
             this.sm.controls.enabled = true;
             // Clear pending point if any
             this._clearPending();
@@ -94,8 +99,18 @@ export class MeasurementManager {
 
     // ─── CLICK HANDLING ───────────────────────────────────────────
 
-    _handleClick(e) {
+    _handlePointerDown(e) {
+        this._pointerDownPos.x = e.clientX;
+        this._pointerDownPos.y = e.clientY;
+    }
+
+    _handlePointerUp(e) {
         if (!this.active || !this.sm.loadedModel) return;
+
+        // Ignore if pointer moved (drag/orbit), threshold 5px
+        const dx = e.clientX - this._pointerDownPos.x;
+        const dy = e.clientY - this._pointerDownPos.y;
+        if (Math.sqrt(dx * dx + dy * dy) > 5) return;
 
         // Check if model is a point cloud (unsupported for raycasting)
         if (this._isPointCloud()) {
