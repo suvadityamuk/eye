@@ -49,7 +49,7 @@ export class CameraManager {
         const helper = new THREE.CameraHelper(cam);
         this.sm.scene.add(helper);
 
-        const entry = { id, name: camName, camera: cam, helper };
+        const entry = { id, name: camName, camera: cam, helper, enabled: true };
         this.cameras.push(entry);
 
         if (!this.selectedId) {
@@ -93,6 +93,15 @@ export class CameraManager {
             entry.name = newName;
             this.onCamerasChanged?.();
         }
+    }
+
+    /** Toggle a camera's visibility (frustum helper on/off) */
+    toggleCamera(id) {
+        const entry = this._getById(id);
+        if (!entry) return;
+        entry.enabled = !entry.enabled;
+        entry.helper.visible = entry.enabled;
+        this.onCamerasChanged?.();
     }
 
     /** Get all cameras */
@@ -463,7 +472,7 @@ export class CameraManager {
     /** Update all camera helpers (call in animate loop) */
     updateHelpers() {
         for (const entry of this.cameras) {
-            if (entry.helper.visible) {
+            if (entry.enabled && entry.helper.visible) {
                 entry.helper.update();
             }
         }

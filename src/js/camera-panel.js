@@ -136,6 +136,9 @@ export class CameraPanel {
             if (entry.id === this.manager.selectedId) {
                 item.classList.add('selected');
             }
+            if (!entry.enabled) {
+                item.classList.add('disabled');
+            }
 
             const isRecording = this.manager.isRecording && this.manager._recordCameraId === entry.id;
             const hasAnimations = this.manager.hasAnimations();
@@ -143,10 +146,11 @@ export class CameraPanel {
 
             item.innerHTML = `
                 <div class="camera-item-header">
-                    <span class="camera-name" data-id="${entry.id}" title="Click to rename">${entry.name}</span>
+                    <span class="camera-name" data-id="${entry.id}" title="Double-click to rename">${entry.name}</span>
+                    <button class="hud-btn-sm cam-action-btn cam-toggle-btn ${entry.enabled ? '' : 'toggled-off'}" data-action="toggle" data-id="${entry.id}" title="${entry.enabled ? 'Hide camera' : 'Show camera'}">${entry.enabled ? '👁' : '🚫'}</button>
                 </div>
                 <div class="camera-item-actions">
-                    <button class="hud-btn-sm cam-action-btn ${isPreviewing ? 'active' : ''}" data-action="preview" data-id="${entry.id}" title="Toggle PiP preview">👁</button>
+                    <button class="hud-btn-sm cam-action-btn ${isPreviewing ? 'active' : ''}" data-action="preview" data-id="${entry.id}" title="Toggle PiP preview">🔍</button>
                     <button class="hud-btn-sm cam-action-btn" data-action="snap" data-id="${entry.id}" title="Snap viewport to camera">🎯</button>
                     <button class="hud-btn-sm cam-action-btn" data-action="update" data-id="${entry.id}" title="Update camera from viewport">📌</button>
                     <button class="hud-btn-sm cam-action-btn" data-action="capture" data-id="${entry.id}" title="Capture still image">📸</button>
@@ -161,6 +165,7 @@ export class CameraPanel {
                 this.manager.selectCamera(entry.id);
             });
 
+            // Bind toggle button in header (not caught by querySelectorAll below since it's in header)
             this.cameraList.appendChild(item);
         });
 
@@ -195,6 +200,10 @@ export class CameraPanel {
                     this._showPiP();
                 }
                 this._renderList();
+                break;
+
+            case 'toggle':
+                this.manager.toggleCamera(id);
                 break;
 
             case 'snap':

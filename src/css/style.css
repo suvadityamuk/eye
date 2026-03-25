@@ -1926,6 +1926,28 @@ kbd {
 
 .camera-item-header {
     margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.camera-item.disabled {
+    opacity: 0.4;
+}
+
+.camera-item.disabled .camera-name {
+    text-decoration: line-through;
+}
+
+.cam-toggle-btn {
+    font-size: 10px !important;
+    padding: 1px 4px !important;
+    min-width: 20px;
+}
+
+.cam-toggle-btn.toggled-off {
+    border-color: var(--text-dim);
+    color: var(--text-dim);
 }
 
 .camera-name {
