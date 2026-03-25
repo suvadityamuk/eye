@@ -10,6 +10,7 @@ import { ComparisonMode } from './comparison-mode.js';
 import { HistoryPanel } from './history-panel.js';
 import { KeyboardControls } from './keyboard-controls.js';
 import { MeasurementPanel } from './measurement-panel.js';
+import { CameraPanel } from './camera-panel.js';
 
 class App {
     constructor() {
@@ -24,6 +25,19 @@ class App {
         this.keyboardControls = new KeyboardControls();
         this.measurementPanel = new MeasurementPanel(this.sceneManager);
         this._mainMeasureManager = this.measurementPanel.manager;  // Store for comparison mode switching
+        this.cameraPanel = new CameraPanel(this.sceneManager);
+        this._mainCameraManager = this.cameraPanel.manager;  // Store for comparison mode switching
+
+        // Wire PiP preview and camera helper updates into the render loop
+        this.sceneManager.onAfterRender = () => {
+            this.cameraPanel.renderPreview();
+            this.cameraPanel.manager.updateHelpers();
+        };
+        // Also bind PiP close button
+        document.getElementById('pip-close-btn')?.addEventListener('click', () => {
+            this.cameraPanel._hidePiP();
+            this.cameraPanel._renderList();
+        });
 
         // Wire comparison mode slot changes to measurement panel
         this.comparisonMode.onActiveSlotChanged = (slotIndex, measureManager) => {
@@ -123,6 +137,7 @@ class App {
             this.materialPanel.refresh();
             this.animationPanel.refresh();
             this.measurementPanel.onModelLoaded();
+            this.cameraPanel.onModelLoaded();
 
             // Save to local history
             this.historyPanel.saveToHistory(primaryFile);
@@ -297,6 +312,12 @@ class App {
                     break;
                 case 'm':
                     this.measurementPanel.toggleMeasureMode();
+                    break;
+                case 'p':
+                    this.cameraPanel.addCameraFromViewport();
+                    break;
+                case 'P':
+                    this.cameraPanel.captureSelected();
                     break;
                 case 't':
                     document.getElementById('btn-theme-toggle').click();

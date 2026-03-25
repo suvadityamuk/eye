@@ -13,6 +13,7 @@ export class SceneManager {
         this.loadedModel = null;
         this.animationMixer = null;
         this.animationClips = [];
+        this.onAfterRender = null; // Callback: () => void
 
         this._initRenderer();
         this._initLabelRenderer();
@@ -177,6 +178,7 @@ export class SceneManager {
         if (this.dirLightHelper && this.dirLightHelper.visible) this.dirLightHelper.update();
         this.renderer.render(this.scene, this.camera);
         if (this.labelRenderer) this.labelRenderer.render(this.scene, this.camera);
+        if (this.onAfterRender) this.onAfterRender();
     }
 
     /** Set the loaded object */

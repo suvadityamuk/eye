@@ -1895,3 +1895,197 @@ kbd {
 .bbox-dimensions .info-row {
     padding: 2px 0;
 }
+
+/* ============================================================
+   CAMERA ACTORS
+   ============================================================ */
+
+/* --- Camera List --- */
+.camera-list {
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.camera-item {
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 4px;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.camera-item:hover {
+    border-color: var(--accent-dim);
+    background: var(--bg-hover);
+}
+
+.camera-item.selected {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+}
+
+.camera-item-header {
+    margin-bottom: 4px;
+}
+
+.camera-name {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+    cursor: text;
+    outline: none;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.camera-name[contenteditable="true"] {
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+}
+
+.camera-item-actions {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+}
+
+.cam-action-btn {
+    font-size: 11px !important;
+    padding: 2px 5px !important;
+    min-width: 24px;
+    justify-content: center;
+}
+
+.cam-action-btn.recording {
+    border-color: #ff4444;
+    color: #ff4444;
+    background: rgba(255, 68, 68, 0.15);
+    animation: record-pulse 1s ease-in-out infinite;
+}
+
+.cam-action-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.cam-delete-btn:hover {
+    border-color: #ff4444 !important;
+    color: #ff4444 !important;
+}
+
+/* --- PiP Preview --- */
+.pip-preview {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 25;
+    border: 1px solid var(--accent);
+    background: var(--bg-panel);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px var(--accent-glow);
+}
+
+.pip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 8px;
+    background: var(--accent-glow);
+    border-bottom: 1px solid var(--accent-dim);
+}
+
+.pip-label {
+    font-family: var(--font-ui);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--accent);
+}
+
+.pip-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0 4px;
+    transition: var(--transition);
+}
+
+.pip-close-btn:hover {
+    color: var(--accent);
+}
+
+#pip-preview-canvas {
+    display: block;
+    width: 320px;
+    height: 200px;
+}
+
+/* --- Recording Indicator --- */
+.record-indicator {
+    position: absolute;
+    top: 28px;
+    left: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 2px;
+    z-index: 26;
+}
+
+.record-dot {
+    width: 8px;
+    height: 8px;
+    background: #ff4444;
+    border-radius: 50%;
+    animation: record-pulse 1s ease-in-out infinite;
+}
+
+.record-time {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: #ff4444;
+    letter-spacing: 1px;
+}
+
+@keyframes record-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* --- Capture Flash --- */
+.capture-flash {
+    position: absolute;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 30;
+    transition: opacity 0.05s ease-in;
+}
+
+.capture-flash.active {
+    opacity: 0.6;
+    transition: opacity 0.05s ease-in;
+    animation: flash-fade 0.35s ease-out forwards;
+}
+
+@keyframes flash-fade {
+    0% { opacity: 0.6; }
+    100% { opacity: 0; }
+}
+
+/* --- Light theme overrides for cameras --- */
+[data-theme="light"] .pip-preview {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 12px var(--accent-glow);
+}
+
+[data-theme="light"] .record-indicator {
+    background: rgba(255, 255, 255, 0.85);
+}

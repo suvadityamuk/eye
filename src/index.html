@@ -254,6 +254,22 @@
                 </div>
             </div>
 
+            <!-- PiP Preview -->
+            <div id="pip-preview" class="pip-preview" style="display:none;">
+                <div class="pip-header">
+                    <span class="pip-label">CAMERA PREVIEW</span>
+                    <button id="pip-close-btn" class="pip-close-btn">✕</button>
+                </div>
+                <canvas id="pip-preview-canvas" width="320" height="200"></canvas>
+                <div id="record-indicator" class="record-indicator" style="display:none;">
+                    <span class="record-dot"></span>
+                    <span class="record-time">0:00</span>
+                </div>
+            </div>
+
+            <!-- Capture flash -->
+            <div id="capture-flash" class="capture-flash"></div>
+
             <!-- Loading overlay -->
             <div id="loading-overlay" style="display:none;">
                 <div class="loading-spinner"></div>
@@ -263,6 +279,61 @@
 
         <!-- RIGHT SIDEBAR -->
         <aside id="sidebar-right" class="sidebar">
+            <!-- Camera Actors Panel -->
+            <div class="panel" id="panel-cameras">
+                <div class="panel-header">
+                    <span class="panel-corner tl"></span>
+                    <span class="panel-corner tr"></span>
+                    <span class="panel-title">CAMERAS</span>
+                    <button class="panel-toggle" data-panel="panel-cameras-body">−</button>
+                </div>
+                <div class="panel-body" id="panel-cameras-body">
+                    <button class="hud-btn full-width" id="btn-add-camera" style="margin-top:0;">
+                        <span class="btn-icon">📷</span>
+                        <span>ADD CAMERA</span>
+                    </button>
+                    <div class="sub-section">
+                        <div class="sub-header">CAMERA LIST</div>
+                        <div id="camera-list" class="camera-list">
+                            <div class="empty-state">No cameras placed</div>
+                        </div>
+                    </div>
+                    <div class="sub-section">
+                        <div class="sub-header">CAPTURE SETTINGS</div>
+                        <div class="control-row">
+                            <label>RESOLUTION</label>
+                            <select id="cam-resolution" class="hud-select">
+                                <option value="1">1× (Viewport)</option>
+                                <option value="2">2× (Double)</option>
+                                <option value="4">4× (Quad)</option>
+                            </select>
+                        </div>
+                        <div class="control-row">
+                            <label>FORMAT</label>
+                            <select id="cam-format" class="hud-select">
+                                <option value="png">PNG</option>
+                                <option value="jpeg">JPEG</option>
+                                <option value="webp">WebP</option>
+                            </select>
+                        </div>
+                        <div class="control-row">
+                            <label>TRANSPARENT BG</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="cam-transparent">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="control-row">
+                            <label>HIDE HELPERS</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="cam-hide-helpers">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Measurement Panel -->
             <div class="panel" id="panel-measurement">
                 <div class="panel-header">
@@ -613,6 +684,14 @@
                     <div class="help-row">
                         <span class="help-keys"><kbd>M</kbd></span>
                         <span class="help-action">Toggle measure mode</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>P</kbd></span>
+                        <span class="help-action">Place camera at current view</span>
+                    </div>
+                    <div class="help-row">
+                        <span class="help-keys"><kbd>Shift</kbd> + <kbd>P</kbd></span>
+                        <span class="help-action">Capture from selected camera</span>
                     </div>
                     <div class="help-row">
                         <span class="help-keys"><kbd>Space</kbd></span>
