@@ -133,6 +133,16 @@ export class CameraManager {
         this.onCamerasChanged?.();
     }
 
+    /** Update a camera parameter (fov, near, or far) */
+    setCameraParam(id, param, value) {
+        const entry = this._getById(id);
+        if (!entry) return;
+
+        entry.camera[param] = value;
+        entry.camera.updateProjectionMatrix();
+        entry.helper.update();
+    }
+
     // ─── PiP PREVIEW ───────────────────────────────────────────────
 
     /** Set which camera feeds the PiP preview (null to disable) */

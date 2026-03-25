@@ -39,6 +39,15 @@ export class CameraPanel {
         this.toggleTransparent = document.getElementById('cam-transparent');
         this.toggleHideHelpers = document.getElementById('cam-hide-helpers');
 
+        // Camera parameters
+        this.paramsSection = document.getElementById('cam-params-section');
+        this.sliderFov = document.getElementById('cam-fov');
+        this.sliderNear = document.getElementById('cam-near');
+        this.sliderFar = document.getElementById('cam-far');
+        this.valueFov = document.getElementById('cam-fov-value');
+        this.valueNear = document.getElementById('cam-near-value');
+        this.valueFar = document.getElementById('cam-far-value');
+
         // Recording indicator
         this.recordIndicator = document.getElementById('record-indicator');
     }
@@ -64,10 +73,32 @@ export class CameraPanel {
         this.toggleHideHelpers?.addEventListener('change', (e) => {
             this._hideHelpers = e.target.checked;
         });
+
+        // Camera parameter sliders
+        this.sliderFov?.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            this.valueFov.textContent = `${val}°`;
+            this.manager.setCameraParam(this.manager.selectedId, 'fov', val);
+        });
+
+        this.sliderNear?.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            this.valueNear.textContent = val;
+            this.manager.setCameraParam(this.manager.selectedId, 'near', val);
+        });
+
+        this.sliderFar?.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            this.valueFar.textContent = val;
+            this.manager.setCameraParam(this.manager.selectedId, 'far', val);
+        });
     }
 
     _bindManagerCallbacks() {
-        this.manager.onCamerasChanged = () => this._renderList();
+        this.manager.onCamerasChanged = () => {
+            this._renderList();
+            this._syncParamsToSelected();
+        };
 
         this.manager.onRecordingStateChanged = (recording, elapsed) => {
             if (this.recordIndicator) {
@@ -93,6 +124,7 @@ export class CameraPanel {
 
         if (cameras.length === 0) {
             this.cameraList.innerHTML = '<div class="empty-state">No cameras placed</div>';
+            if (this.paramsSection) this.paramsSection.style.display = 'none';
             return;
         }
 
@@ -264,6 +296,33 @@ export class CameraPanel {
                 el.blur();
             }
         });
+    }
+
+    // ─── CAMERA PARAMETER SYNC ─────────────────────────────────────
+
+    /** Sync the FOV/near/far sliders to the currently selected camera */
+    _syncParamsToSelected() {
+        const entry = this.manager._getById(this.manager.selectedId);
+        if (!entry) {
+            if (this.paramsSection) this.paramsSection.style.display = 'none';
+            return;
+        }
+
+        if (this.paramsSection) this.paramsSection.style.display = '';
+
+        const cam = entry.camera;
+        if (this.sliderFov) {
+            this.sliderFov.value = cam.fov;
+            this.valueFov.textContent = `${Math.round(cam.fov)}°`;
+        }
+        if (this.sliderNear) {
+            this.sliderNear.value = cam.near;
+            this.valueNear.textContent = cam.near;
+        }
+        if (this.sliderFar) {
+            this.sliderFar.value = cam.far;
+            this.valueFar.textContent = cam.far;
+        }
     }
 
     // ─── VISUAL EFFECTS ────────────────────────────────────────────
