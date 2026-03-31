@@ -11,6 +11,9 @@ import { HistoryPanel } from './history-panel.js';
 import { KeyboardControls } from './keyboard-controls.js';
 import { MeasurementPanel } from './measurement-panel.js';
 import { CameraPanel } from './camera-panel.js';
+import { ExportPanel } from './export-panel.js';
+import { RenderMode } from './render-mode.js';
+import { ClippingPanel } from './clipping-panel.js';
 
 class App {
     constructor() {
@@ -27,6 +30,9 @@ class App {
         this._mainMeasureManager = this.measurementPanel.manager;  // Store for comparison mode switching
         this.cameraPanel = new CameraPanel(this.sceneManager);
         this._mainCameraManager = this.cameraPanel.manager;  // Store for comparison mode switching
+        this.exportPanel = new ExportPanel(this.sceneManager);
+        this.renderMode = new RenderMode(this.sceneManager);
+        this.clippingPanel = new ClippingPanel(this.sceneManager);
 
         // Wire PiP preview and camera helper updates into the render loop
         this.sceneManager.onAfterRender = () => {
@@ -138,6 +144,9 @@ class App {
             this.animationPanel.refresh();
             this.measurementPanel.onModelLoaded();
             this.cameraPanel.onModelLoaded();
+            this.exportPanel.onModelLoaded(getFormatType(primaryFile.name));
+            this.renderMode.onModelLoaded();
+            this.clippingPanel.onModelLoaded();
 
             // Save to local history
             this.historyPanel.saveToHistory(primaryFile);
@@ -318,6 +327,9 @@ class App {
                     break;
                 case 'P':
                     this.cameraPanel.captureSelected();
+                    break;
+                case 'k':
+                    this.clippingPanel.toggle();
                     break;
                 case 't':
                     document.getElementById('btn-theme-toggle').click();
