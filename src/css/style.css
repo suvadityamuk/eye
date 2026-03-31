@@ -613,6 +613,59 @@ html {
     opacity: 0.3;
 }
 
+/* --- Camera Parameter Sliders --- */
+.cam-param-row {
+    padding: 5px 0;
+}
+
+.cam-param-row > label {
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+}
+
+.slider-group .hud-range {
+    width: 100%;
+    flex: none;
+}
+
+.slider-value {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-primary);
+    text-align: center;
+    user-select: none;
+}
+
+.far-max-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.far-max-row label {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
+.far-max-row .hud-number {
+    width: 64px;
+    font-size: 10px;
+}
+
 /* --- Color Picker --- */
 .hud-color {
     -webkit-appearance: none;

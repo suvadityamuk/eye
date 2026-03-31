@@ -300,25 +300,29 @@
                     </div>
                     <div class="sub-section" id="cam-params-section" style="display:none;">
                         <div class="sub-header">CAMERA PARAMETERS</div>
-                        <div class="control-row">
+                        <div class="cam-param-row">
                             <label>FOV</label>
                             <div class="slider-group">
-                                <input type="range" id="cam-fov" class="hud-slider" min="10" max="150" value="50" step="1">
+                                <input type="range" id="cam-fov" class="hud-range" min="10" max="150" value="50" step="1">
                                 <span class="slider-value" id="cam-fov-value">50°</span>
                             </div>
                         </div>
-                        <div class="control-row">
+                        <div class="cam-param-row">
                             <label>NEAR</label>
                             <div class="slider-group">
-                                <input type="range" id="cam-near" class="hud-slider" min="0.001" max="10" value="0.1" step="0.001">
+                                <input type="range" id="cam-near" class="hud-range" min="0.001" max="10" value="0.1" step="0.001">
                                 <span class="slider-value" id="cam-near-value">0.1</span>
                             </div>
                         </div>
-                        <div class="control-row">
+                        <div class="cam-param-row">
                             <label>FAR</label>
                             <div class="slider-group">
-                                <input type="range" id="cam-far" class="hud-slider" min="10" max="10000" value="100" step="10">
+                                <input type="range" id="cam-far" class="hud-range" min="10" max="1000" value="100" step="1">
                                 <span class="slider-value" id="cam-far-value">100</span>
+                            </div>
+                            <div class="far-max-row">
+                                <label>MAX</label>
+                                <input type="number" id="cam-far-max" class="hud-number" value="1000" min="100" step="100">
                             </div>
                         </div>
                     </div>

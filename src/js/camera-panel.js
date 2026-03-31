@@ -44,6 +44,7 @@ export class CameraPanel {
         this.sliderFov = document.getElementById('cam-fov');
         this.sliderNear = document.getElementById('cam-near');
         this.sliderFar = document.getElementById('cam-far');
+        this.inputFarMax = document.getElementById('cam-far-max');
         this.valueFov = document.getElementById('cam-fov-value');
         this.valueNear = document.getElementById('cam-near-value');
         this.valueFar = document.getElementById('cam-far-value');
@@ -91,6 +92,21 @@ export class CameraPanel {
             const val = parseFloat(e.target.value);
             this.valueFar.textContent = val;
             this.manager.setCameraParam(this.manager.selectedId, 'far', val);
+        });
+
+        // Far max input — dynamically adjusts slider range
+        this.inputFarMax?.addEventListener('change', (e) => {
+            const newMax = Math.max(100, parseInt(e.target.value) || 1000);
+            e.target.value = newMax;
+            if (this.sliderFar) {
+                this.sliderFar.max = newMax;
+                // Clamp current value if it exceeds new max
+                if (parseFloat(this.sliderFar.value) > newMax) {
+                    this.sliderFar.value = newMax;
+                    this.valueFar.textContent = newMax;
+                    this.manager.setCameraParam(this.manager.selectedId, 'far', newMax);
+                }
+            }
         });
     }
 
@@ -329,6 +345,13 @@ export class CameraPanel {
             this.valueNear.textContent = cam.near;
         }
         if (this.sliderFar) {
+            // Auto-expand slider max if camera's far exceeds it
+            const currentMax = parseFloat(this.sliderFar.max);
+            if (cam.far > currentMax) {
+                const newMax = Math.ceil(cam.far / 100) * 100;
+                this.sliderFar.max = newMax;
+                if (this.inputFarMax) this.inputFarMax.value = newMax;
+            }
             this.sliderFar.value = cam.far;
             this.valueFar.textContent = cam.far;
         }
