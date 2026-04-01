@@ -14,6 +14,7 @@ import { CameraPanel } from './camera-panel.js';
 import { ExportPanel } from './export-panel.js';
 import { RenderMode } from './render-mode.js';
 import { ClippingPanel } from './clipping-panel.js';
+import { trackFileLoad, trackFeatureUsed, trackThemeToggle, trackShortcut } from './analytics.js';
 
 class App {
     constructor() {
@@ -24,7 +25,7 @@ class App {
         this.animationPanel = new AnimationPanel(this.sceneManager);
         this.comparisonMode = new ComparisonMode();
         this.isComparisonMode = false;
-        this.historyPanel = new HistoryPanel((file) => this._handleFiles([file]));
+        this.historyPanel = new HistoryPanel((file) => this._handleFiles([file], 'history'));
         this.keyboardControls = new KeyboardControls();
         this.measurementPanel = new MeasurementPanel(this.sceneManager);
         this._mainMeasureManager = this.measurementPanel.manager;  // Store for comparison mode switching
@@ -98,11 +99,11 @@ class App {
         viewport.addEventListener('drop', (e) => {
             dropzone.classList.remove('drag-over');
             const files = Array.from(e.dataTransfer.files);
-            if (files.length > 0) this._handleFiles(files);
+            if (files.length > 0) this._handleFiles(files, 'drop');
         });
     }
 
-    async _handleFiles(files) {
+    async _handleFiles(files, loadMethod = 'upload') {
         // Find the primary 3D file (not MTL)
         const primaryFile = files.find(f => {
             const fmt = getFormatType(f.name);
@@ -126,6 +127,8 @@ class App {
             if (firstAvailable !== -1) {
                 await this.comparisonMode.loadToSlot(firstAvailable, files);
                 this.historyPanel.saveToHistory(primaryFile);
+                const fmt = getFormatType(primaryFile.name);
+                trackFileLoad(fmt || 'unknown', primaryFile.size, loadMethod);
             } else {
                 this._showToast('All comparison slots are full', 'warning');
             }
@@ -153,6 +156,10 @@ class App {
 
             // Hide dropzone
             document.getElementById('dropzone-main').classList.add('hidden');
+
+            // Analytics: track file load
+            const fmt = getFormatType(primaryFile.name);
+            trackFileLoad(fmt || 'unknown', primaryFile.size, loadMethod);
 
             const ext = primaryFile.name.split('.').pop().toUpperCase();
             this._showToast(`Loaded: ${primaryFile.name} (${ext})`, 'success');
@@ -226,6 +233,7 @@ class App {
         btn.addEventListener('click', () => {
             this.isComparisonMode = !this.isComparisonMode;
             btn.classList.toggle('active', this.isComparisonMode);
+            trackFeatureUsed('comparison_mode', { enabled: this.isComparisonMode });
             if (this.isComparisonMode) {
                 this.comparisonMode.activate();
                 // Deactivate measurement mode and switch to slot 0's manager
@@ -267,6 +275,7 @@ class App {
             const current = html.getAttribute('data-theme') || 'dark';
             const next = current === 'dark' ? 'light' : 'dark';
             this._applyTheme(next, html, icon);
+            trackThemeToggle(next);
             localStorage.setItem('eye-theme', next);
         });
     }
@@ -305,6 +314,7 @@ class App {
                     break;
                 case 'r':
                     this.sceneManager.resetCamera();
+                    trackShortcut('r');
                     break;
                 case 'g':
                     const gridToggle = document.getElementById('toggle-grid');
@@ -318,9 +328,11 @@ class App {
                     break;
                 case 'c':
                     document.getElementById('btn-comparison-toggle').click();
+                    trackShortcut('c');
                     break;
                 case 'm':
                     this.measurementPanel.toggleMeasureMode();
+                    trackShortcut('m');
                     break;
                 case 'p':
                     this.cameraPanel.addCameraFromViewport();

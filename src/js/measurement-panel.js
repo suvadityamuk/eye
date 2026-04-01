@@ -2,6 +2,7 @@
  * measurement-panel.js — Sidebar panel UI controller for measurements
  */
 import { MeasurementManager } from './measurement-manager.js';
+import { trackMeasurement } from './analytics.js';
 
 export class MeasurementPanel {
     /**
@@ -88,6 +89,7 @@ export class MeasurementPanel {
 
         this.manager.onMeasurementAdded = (measurements) => {
             this._refreshList(measurements);
+            trackMeasurement(this.unitSelect.value);
         };
 
         this.manager.onMeasurementRemoved = (measurements) => {

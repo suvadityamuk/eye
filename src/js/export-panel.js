@@ -2,6 +2,7 @@
  * export-panel.js — Export/convert loaded 3D models to different formats
  */
 import * as THREE from 'three';
+import { trackExport } from './analytics.js';
 
 // Format metadata: what each export format preserves
 const EXPORT_FORMATS = {
@@ -132,6 +133,7 @@ export class ExportPanel {
 
             // Trigger download
             this._download(blob, filename, meta.mime);
+            trackExport(this.sourceFormat || 'unknown', fmt);
             if (this.exportStatus) this.exportStatus.textContent = `Exported: ${filename}`;
         } catch (err) {
             console.error('Export error:', err);

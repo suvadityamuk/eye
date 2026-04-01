@@ -3,6 +3,7 @@
  * Modes: PBR, Unlit, Normals, Matcap, Depth, UV Checker
  */
 import * as THREE from 'three';
+import { trackRenderMode } from './analytics.js';
 
 const MODES = ['pbr', 'unlit', 'normals', 'matcap', 'depth', 'uvchecker'];
 
@@ -47,6 +48,7 @@ export class RenderMode {
         }
 
         this.currentMode = mode;
+        trackRenderMode(mode);
 
         // Update toolbar UI
         this.buttons.forEach(btn => {

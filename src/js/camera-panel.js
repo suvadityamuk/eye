@@ -3,6 +3,7 @@
  * Camera list, capture settings, and recording controls.
  */
 import { CameraManager } from './camera-manager.js';
+import { trackCameraCapture } from './analytics.js';
 
 export class CameraPanel {
     constructor(sceneManager) {
@@ -241,6 +242,7 @@ export class CameraPanel {
                     hideHelpers: this._hideHelpers,
                 });
                 if (filename) {
+                    trackCameraCapture(this._format, this._multiplier);
                     this._showToast(`Captured: ${filename}`, 'success');
                 }
                 break;
@@ -388,6 +390,7 @@ export class CameraPanel {
             hideHelpers: this._hideHelpers,
         });
         if (filename) {
+            trackCameraCapture(this._format, this._multiplier);
             this._showToast(`Captured: ${filename}`, 'success');
         }
     }
