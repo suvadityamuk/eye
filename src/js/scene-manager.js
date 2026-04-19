@@ -251,6 +251,17 @@ export class SceneManager {
         this.gridHelper.scale.setScalar(gridSize / 20);
     }
 
+    /** Rotate the loaded model 90° around the given axis ('x', 'y', or 'z') */
+    rotateModel(axis) {
+        if (!this.loadedModel) return;
+        const angle = Math.PI / 2;
+        switch (axis) {
+            case 'x': this.loadedModel.rotateX(angle); break;
+            case 'y': this.loadedModel.rotateY(angle); break;
+            case 'z': this.loadedModel.rotateZ(angle); break;
+        }
+    }
+
     /** Apply keyboard-driven 6DOF movement deltas */
     applyKeyboardMove({ translate, rotate, zoom }) {
         // --- Translation: move camera + orbit target in camera-local space ---

@@ -225,6 +225,13 @@ class App {
         document.getElementById('btn-reset-camera').addEventListener('click', () => {
             this.sceneManager.resetCamera();
         });
+
+        // Rotate model 90° on X / Y / Z
+        document.querySelectorAll('.rotate-axis-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.sceneManager.rotateModel(btn.dataset.axis);
+            });
+        });
     }
 
     // ─── PANEL TOGGLES ─────────────────────────────────────────────

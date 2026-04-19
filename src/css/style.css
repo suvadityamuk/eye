@@ -2222,6 +2222,32 @@ kbd {
 }
 
 /* ═══════════════════════════════════════════
+   TRANSFORM (Rotate) SECTION
+   ═══════════════════════════════════════════ */
+
+.transform-section {
+    margin-top: 6px;
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+}
+
+.rotate-axis-btn {
+    position: relative;
+    cursor: pointer;
+}
+
+.rotate-axis-btn:hover {
+    color: var(--accent) !important;
+    border-color: var(--accent) !important;
+    background: rgba(230, 57, 70, 0.08);
+}
+
+.rotate-axis-btn:active {
+    transform: scale(0.92);
+    background: rgba(230, 57, 70, 0.2);
+}
+
+/* ═══════════════════════════════════════════
    CLIPPING PANEL
    ═══════════════════════════════════════════ */
 

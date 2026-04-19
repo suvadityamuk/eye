@@ -71,13 +71,13 @@ export class RenderMode {
         });
     }
 
-    // ── Internal ──────────────────────────────────────────────
+    // ── Internal ────────────────────────────────────────────────
 
     _storeOriginals() {
         if (!this.sm.loadedModel) return;
         this.originalMaterials.clear();
         this.sm.loadedModel.traverse(child => {
-            if (child.isMesh && child.material) {
+            if ((child.isMesh || child.isPoints) && child.material) {
                 // Clone the reference (not the material itself)
                 this.originalMaterials.set(child.uuid, child.material);
             }
@@ -87,7 +87,7 @@ export class RenderMode {
     _restoreOriginals() {
         if (!this.sm.loadedModel) return;
         this.sm.loadedModel.traverse(child => {
-            if (child.isMesh && this.originalMaterials.has(child.uuid)) {
+            if ((child.isMesh || child.isPoints) && this.originalMaterials.has(child.uuid)) {
                 child.material = this.originalMaterials.get(child.uuid);
             }
         });
@@ -97,11 +97,17 @@ export class RenderMode {
         if (!this.sm.loadedModel) return;
 
         this.sm.loadedModel.traverse(child => {
-            // Skip non-mesh objects (Points, Lines, etc.)
-            if (!child.isMesh) return;
+            // Handle both Mesh and Points objects
+            if (!child.isMesh && !child.isPoints) return;
 
             const origMat = this.originalMaterials.get(child.uuid);
             if (!origMat) return;
+
+            // Route to point-specific materials for Points objects
+            if (child.isPoints) {
+                child.material = this._createPointModeMaterial(mode, origMat, child);
+                return;
+            }
 
             switch (mode) {
                 case 'unlit':
@@ -223,6 +229,97 @@ export class RenderMode {
             });
         });
         return results.length === 1 ? results[0] : results;
+    }
+
+    // ── Point Cloud render mode materials ──────────────────────
+
+    /**
+     * Create an appropriate material for a Points object in the given render mode.
+     */
+    _createPointModeMaterial(mode, origMat, pointsObj) {
+        const hasNormals = pointsObj.geometry?.attributes?.normal;
+        const pointSize = origMat.size || 0.01;
+        const useAttenuation = origMat.sizeAttenuation !== false;
+
+        switch (mode) {
+            case 'unlit': {
+                // Gaussian splat shaders are already unlit — return as-is
+                if (origMat.isShaderMaterial) return origMat;
+                return new THREE.PointsMaterial({
+                    size: pointSize,
+                    vertexColors: origMat.vertexColors || false,
+                    color: origMat.color ? origMat.color.clone() : 0xcccccc,
+                    sizeAttenuation: useAttenuation,
+                });
+            }
+            case 'normals': {
+                if (!hasNormals) {
+                    // Fallback: uniform blue-ish if no normals available
+                    return new THREE.PointsMaterial({
+                        size: pointSize, color: 0x8080ff, sizeAttenuation: useAttenuation,
+                    });
+                }
+                return new THREE.ShaderMaterial({
+                    vertexShader: `
+                        varying vec3 vNormal;
+                        void main() {
+                            vNormal = normalize(normalMatrix * normal);
+                            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                            gl_PointSize = ${pointSize.toFixed(4)} * 500.0 / -mvPosition.z;
+                            gl_PointSize = clamp(gl_PointSize, 1.0, 64.0);
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vNormal;
+                        void main() {
+                            vec2 coord = gl_PointCoord - vec2(0.5);
+                            if (length(coord) > 0.5) discard;
+                            gl_FragColor = vec4(vNormal * 0.5 + 0.5, 1.0);
+                        }
+                    `,
+                });
+            }
+            case 'depth': {
+                return new THREE.ShaderMaterial({
+                    uniforms: {
+                        cameraNear: { value: this.sm.camera.near },
+                        cameraFar: { value: this.sm.camera.far },
+                    },
+                    vertexShader: `
+                        varying float vDepth;
+                        void main() {
+                            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                            vDepth = -mvPosition.z;
+                            gl_PointSize = ${pointSize.toFixed(4)} * 500.0 / -mvPosition.z;
+                            gl_PointSize = clamp(gl_PointSize, 1.0, 64.0);
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        uniform float cameraNear;
+                        uniform float cameraFar;
+                        varying float vDepth;
+                        void main() {
+                            vec2 coord = gl_PointCoord - vec2(0.5);
+                            if (length(coord) > 0.5) discard;
+                            float depth = (vDepth - cameraNear) / (cameraFar - cameraNear);
+                            depth = clamp(1.0 - depth, 0.0, 1.0);
+                            gl_FragColor = vec4(vec3(depth), 1.0);
+                        }
+                    `,
+                });
+            }
+            case 'matcap':
+            case 'uvchecker':
+            default:
+                // Matcap and UV checker don't apply well to point clouds.
+                return new THREE.PointsMaterial({
+                    size: pointSize,
+                    color: mode === 'matcap' ? 0xddbbaa : 0x888888,
+                    sizeAttenuation: useAttenuation,
+                });
+        }
     }
 
     // ── Procedural texture generators ─────────────────────────
