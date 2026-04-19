@@ -50,6 +50,10 @@ export class KeyboardControls {
         this.rotateSpeed = 1.5;   // radians per second
         this.zoomSpeed = 4.0;
 
+        // Pre-allocated scratch vectors for update() (avoids per-frame allocations)
+        this._translate = new THREE.Vector3();
+        this._rotate = new THREE.Vector3();
+
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onKeyUp = this._onKeyUp.bind(this);
         this._onBlur = this._onBlur.bind(this);
@@ -114,8 +118,8 @@ export class KeyboardControls {
     update(delta) {
         if (!this.enabled || this.pressedKeys.size === 0) return null;
 
-        const translate = new THREE.Vector3();
-        const rotate = new THREE.Vector3(); // x=pitch, y=yaw, z=roll
+        const translate = this._translate.set(0, 0, 0);
+        const rotate = this._rotate.set(0, 0, 0);
         let zoom = 0;
 
         const tSpeed = this.translateSpeed * delta;

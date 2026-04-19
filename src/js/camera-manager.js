@@ -250,9 +250,7 @@ export class CameraManager {
         offRenderer.outputColorSpace = THREE.SRGBColorSpace;
         offRenderer.toneMapping = THREE.ACESFilmicToneMapping;
         offRenderer.toneMappingExposure = 1.0;
-        if (this.sm.scene.environment) {
-            // Environment map is already set on the scene
-        }
+
 
         if (transparent) {
             offRenderer.setClearColor(0x000000, 0);

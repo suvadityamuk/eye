@@ -25,6 +25,13 @@ export class SceneManager {
 
         this._boundAnimate = this._animate.bind(this);
         this._boundAnimate();
+
+        // Pre-allocated scratch objects for applyKeyboardMove (avoids per-frame allocations)
+        this._kbRight = new THREE.Vector3();
+        this._kbUp = new THREE.Vector3();
+        this._kbForward = new THREE.Vector3();
+        this._kbOffset = new THREE.Vector3();
+        this._kbQuat = new THREE.Quaternion();
     }
 
     _initRenderer() {
@@ -248,65 +255,54 @@ export class SceneManager {
     applyKeyboardMove({ translate, rotate, zoom }) {
         // --- Translation: move camera + orbit target in camera-local space ---
         if (translate && translate.lengthSq() > 0) {
-            const right = new THREE.Vector3();
-            const up = new THREE.Vector3();
-            const forward = new THREE.Vector3();
+            this.camera.getWorldDirection(this._kbForward);
+            this._kbRight.crossVectors(this._kbForward, this.camera.up).normalize();
+            this._kbUp.crossVectors(this._kbRight, this._kbForward).normalize();
 
-            this.camera.getWorldDirection(forward);
-            right.crossVectors(forward, this.camera.up).normalize();
-            up.crossVectors(right, forward).normalize();
+            this._kbOffset.set(0, 0, 0);
+            this._kbOffset.addScaledVector(this._kbRight, translate.x);
+            this._kbOffset.addScaledVector(this._kbUp, translate.y);
+            this._kbOffset.addScaledVector(this._kbForward, -translate.z);
 
-            const offset = new THREE.Vector3();
-            offset.addScaledVector(right, translate.x);
-            offset.addScaledVector(up, translate.y);
-            offset.addScaledVector(forward, -translate.z);
-
-            this.camera.position.add(offset);
-            this.controls.target.add(offset);
+            this.camera.position.add(this._kbOffset);
+            this.controls.target.add(this._kbOffset);
         }
 
         // --- Rotation ---
         if (rotate && rotate.lengthSq() > 0) {
             const target = this.controls.target;
-            const offset = this.camera.position.clone().sub(target);
-            const distance = offset.length();
+            this._kbOffset.copy(this.camera.position).sub(target);
 
             // Yaw (rotate.y): rotate camera position around world Y through target
             if (Math.abs(rotate.y) > 0.0001) {
-                const yawQuat = new THREE.Quaternion().setFromAxisAngle(
-                    new THREE.Vector3(0, 1, 0), rotate.y
-                );
-                offset.applyQuaternion(yawQuat);
+                this._kbQuat.setFromAxisAngle(this._kbUp.set(0, 1, 0), rotate.y);
+                this._kbOffset.applyQuaternion(this._kbQuat);
             }
 
             // Pitch (rotate.x): rotate camera position around camera-local right axis
             if (Math.abs(rotate.x) > 0.0001) {
-                const forward = new THREE.Vector3();
-                this.camera.getWorldDirection(forward);
-                const rightAxis = new THREE.Vector3().crossVectors(forward, this.camera.up).normalize();
-                const pitchQuat = new THREE.Quaternion().setFromAxisAngle(rightAxis, rotate.x);
-                offset.applyQuaternion(pitchQuat);
+                this.camera.getWorldDirection(this._kbForward);
+                this._kbRight.crossVectors(this._kbForward, this.camera.up).normalize();
+                this._kbQuat.setFromAxisAngle(this._kbRight, rotate.x);
+                this._kbOffset.applyQuaternion(this._kbQuat);
             }
 
-            this.camera.position.copy(target).add(offset);
+            this.camera.position.copy(target).add(this._kbOffset);
 
             // Roll (rotate.z): rotate the camera's up vector around the view direction
             if (Math.abs(rotate.z) > 0.0001) {
-                const forward = new THREE.Vector3();
-                this.camera.getWorldDirection(forward);
-                const rollQuat = new THREE.Quaternion().setFromAxisAngle(forward, rotate.z);
-                this.camera.up.applyQuaternion(rollQuat).normalize();
+                this.camera.getWorldDirection(this._kbForward);
+                this._kbQuat.setFromAxisAngle(this._kbForward, rotate.z);
+                this.camera.up.applyQuaternion(this._kbQuat).normalize();
             }
         }
 
         // --- Zoom: dolly camera along view direction ---
         if (zoom && Math.abs(zoom) > 0.001) {
-            const forward = new THREE.Vector3();
-            this.camera.getWorldDirection(forward);
-
+            this.camera.getWorldDirection(this._kbForward);
             const dist = this.camera.position.distanceTo(this.controls.target);
             const dolly = Math.min(Math.abs(zoom), dist * 0.9) * Math.sign(zoom);
-            this.camera.position.addScaledVector(forward, dolly);
+            this.camera.position.addScaledVector(this._kbForward, dolly);
         }
 
         this.controls.update();

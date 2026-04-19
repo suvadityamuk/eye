@@ -4,6 +4,7 @@
  */
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { showToast } from './toast.js';
 
 const MAX_MEASUREMENTS = 10;
 
@@ -40,6 +41,10 @@ export class MeasurementManager {
         this.measurements = [];        // Array of measurement objects
         this.bboxHelper = null;
         this.bboxLabels = [];
+
+        // Cached model data (rebuilt on model load, avoids per-frame traversals)
+        this._cachedBBox = null;    // THREE.Box3
+        this._cachedMeshes = [];    // Mesh[] for raycasting
         this.showBBox = false;
 
         // Unit configuration
@@ -134,7 +139,7 @@ export class MeasurementManager {
 
         // Check if model is a point cloud (unsupported for raycasting)
         if (this._isPointCloud()) {
-            this._showToast('Point-to-point measurement is not available for point clouds', 'warning');
+            showToast('Point-to-point measurement is not available for point clouds', 'warning');
             return;
         }
 
@@ -155,7 +160,7 @@ export class MeasurementManager {
         } else {
             // Second point — complete measurement
             if (this.measurements.length >= MAX_MEASUREMENTS) {
-                this._showToast(`Maximum ${MAX_MEASUREMENTS} measurements reached`, 'warning');
+                showToast(`Maximum ${MAX_MEASUREMENTS} measurements reached`, 'warning');
                 this._clearPending();
                 return;
             }
@@ -207,12 +212,7 @@ export class MeasurementManager {
 
         this._raycaster.setFromCamera(this._mouse, this.sm.camera);
 
-        const meshes = [];
-        this.sm.loadedModel.traverse(child => {
-            if (child.isMesh) meshes.push(child);
-        });
-
-        const intersects = this._raycaster.intersectObjects(meshes, false);
+        const intersects = this._raycaster.intersectObjects(this._cachedMeshes, false);
         return intersects.length > 0 ? intersects[0] : null;
     }
 
@@ -274,11 +274,10 @@ export class MeasurementManager {
 
         this._snapIndicator.position.copy(worldPos);
 
-        // Scale relative to model size
+        // Scale relative to model size (uses cached bounding box)
         let scale = 0.02;
-        if (this.sm.loadedModel) {
-            const box = new THREE.Box3().setFromObject(this.sm.loadedModel);
-            const size = box.getSize(new THREE.Vector3());
+        if (this._cachedBBox) {
+            const size = this._cachedBBox.getSize(new THREE.Vector3());
             scale = Math.max(size.x, size.y, size.z) * 0.012;
         }
         this._snapIndicator.scale.setScalar(scale);
@@ -363,11 +362,10 @@ export class MeasurementManager {
     }
 
     _createMarker(position) {
-        // Scale marker relative to model size
+        // Scale marker relative to model size (uses cached bounding box)
         let scale = 0.02;
-        if (this.sm.loadedModel) {
-            const box = new THREE.Box3().setFromObject(this.sm.loadedModel);
-            const size = box.getSize(new THREE.Vector3());
+        if (this._cachedBBox) {
+            const size = this._cachedBBox.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
             scale = maxDim * 0.008;
         }
@@ -542,9 +540,21 @@ export class MeasurementManager {
 
     // ─── LIFECYCLE ────────────────────────────────────────────────
 
-    /** Called when a new model is loaded — clears measurements */
+    /** Called when a new model is loaded — clears measurements and rebuilds caches */
     onModelLoaded() {
         this.clearAll();
+
+        // Rebuild cached data for the new model
+        if (this.sm.loadedModel) {
+            this._cachedBBox = new THREE.Box3().setFromObject(this.sm.loadedModel);
+            this._cachedMeshes = [];
+            this.sm.loadedModel.traverse(child => {
+                if (child.isMesh) this._cachedMeshes.push(child);
+            });
+        } else {
+            this._cachedBBox = null;
+            this._cachedMeshes = [];
+        }
     }
 
     dispose() {
@@ -568,18 +578,5 @@ export class MeasurementManager {
         }
     }
 
-    // ─── UTILITIES ────────────────────────────────────────────────
 
-    _showToast(message, type = 'info') {
-        const container = document.getElementById('toast-container');
-        if (!container) return;
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = message;
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.classList.add('toast-exit');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
 }

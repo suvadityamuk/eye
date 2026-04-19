@@ -15,6 +15,7 @@ import { ExportPanel } from './export-panel.js';
 import { RenderMode } from './render-mode.js';
 import { ClippingPanel } from './clipping-panel.js';
 import { trackFileLoad, trackFeatureUsed, trackThemeToggle, trackShortcut } from './analytics.js';
+import { showToast } from './toast.js';
 
 class App {
     constructor() {
@@ -35,10 +36,24 @@ class App {
         this.renderMode = new RenderMode(this.sceneManager);
         this.clippingPanel = new ClippingPanel(this.sceneManager);
 
-        // Wire PiP preview and camera helper updates into the render loop
+        // Wire PiP preview, camera helpers, and keyboard controls into the render loop
+        this._lastKeyboardTime = performance.now();
         this.sceneManager.onAfterRender = () => {
             this.cameraPanel.renderPreview();
             this.cameraPanel.manager.updateHelpers();
+
+            // Keyboard 6DOF movement (merged into the single rAF loop)
+            const now = performance.now();
+            const delta = (now - this._lastKeyboardTime) / 1000;
+            this._lastKeyboardTime = now;
+            const deltas = this.keyboardControls.update(delta);
+            if (deltas) {
+                if (this.isComparisonMode) {
+                    this.comparisonMode.applyKeyboardMove(deltas);
+                } else {
+                    this.sceneManager.applyKeyboardMove(deltas);
+                }
+            }
         };
         // Also bind PiP close button
         document.getElementById('pip-close-btn')?.addEventListener('click', () => {
@@ -61,9 +76,8 @@ class App {
         this._bindSidebarToggles();
         this._bindThemeToggle();
         this._bindHelpPane();
-        this._startKeyboardLoop();
 
-        this._showToast('Ready — drop a 3D file to begin', 'info');
+        showToast('Ready — drop a 3D file to begin', 'info');
     }
 
     // ─── FILE UPLOAD ───────────────────────────────────────────────
@@ -111,13 +125,13 @@ class App {
         });
 
         if (!primaryFile) {
-            this._showToast('No supported 3D file found', 'warning');
+            showToast('No supported 3D file found', 'warning');
             return;
         }
 
         // Check USD
         if (isUSDFormat(primaryFile.name)) {
-            this._showToast('OpenUSD support coming soon — stay tuned!', 'warning');
+            showToast('OpenUSD support coming soon — stay tuned!', 'warning');
             return;
         }
 
@@ -162,13 +176,13 @@ class App {
             trackFileLoad(fmt || 'unknown', primaryFile.size, loadMethod);
 
             const ext = primaryFile.name.split('.').pop().toUpperCase();
-            this._showToast(`Loaded: ${primaryFile.name} (${ext})`, 'success');
+            showToast(`Loaded: ${primaryFile.name} (${ext})`, 'success');
         } catch (err) {
             console.error('Load error:', err);
             if (err.message === 'USD_COMING_SOON') {
-                this._showToast('OpenUSD support coming soon — stay tuned!', 'warning');
+                showToast('OpenUSD support coming soon — stay tuned!', 'warning');
             } else {
-                this._showToast(`Error: ${err.message}`, 'error');
+                showToast(`Error: ${err.message}`, 'error');
             }
         } finally {
             this._showLoading(false);
@@ -419,28 +433,7 @@ class App {
         }
     }
 
-    // ─── KEYBOARD MOVEMENT LOOP ───────────────────────────────────
-    _startKeyboardLoop() {
-        let lastTime = performance.now();
 
-        const loop = () => {
-            requestAnimationFrame(loop);
-            const now = performance.now();
-            const delta = (now - lastTime) / 1000;
-            lastTime = now;
-
-            const deltas = this.keyboardControls.update(delta);
-            if (!deltas) return;
-
-            if (this.isComparisonMode) {
-                this.comparisonMode.applyKeyboardMove(deltas);
-            } else {
-                this.sceneManager.applyKeyboardMove(deltas);
-            }
-        };
-
-        requestAnimationFrame(loop);
-    }
 
     // ─── SIDEBAR TOGGLES (Responsive) ───────────────────────────────
     _bindSidebarToggles() {
@@ -489,17 +482,7 @@ class App {
         document.getElementById('loading-overlay').style.display = show ? '' : 'none';
     }
 
-    _showToast(message, type = 'info') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = message;
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.classList.add('toast-exit');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    }
+
 }
 
 // ─── BOOT ──────────────────────────────────────────────────────────

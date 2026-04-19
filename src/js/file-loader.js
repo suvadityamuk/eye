@@ -4,11 +4,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
-import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
-import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 
 const SUPPORTED_FORMATS = {
     'gltf': 'gltf', 'glb': 'gltf',
@@ -97,13 +92,16 @@ async function loadGLTF(url) {
     });
 }
 
-/** OBJ (+ optional MTL companion) */
+/** OBJ (+ optional MTL companion) — dynamic import since not always needed */
 async function loadOBJ(url, file, companionFiles) {
+    const { OBJLoader } = await import('three/addons/loaders/OBJLoader.js');
+
     // Check for companion MTL file
     const mtlFile = companionFiles.find(f => f.name.toLowerCase().endsWith('.mtl'));
 
     let materials = null;
     if (mtlFile) {
+        const { MTLLoader } = await import('three/addons/loaders/MTLLoader.js');
         const mtlUrl = URL.createObjectURL(mtlFile);
         const mtlLoader = new MTLLoader();
         materials = await new Promise((resolve, reject) => {
@@ -136,8 +134,9 @@ async function loadOBJ(url, file, companionFiles) {
     });
 }
 
-/** PLY */
+/** PLY — dynamic import since not always needed */
 async function loadPLY(url) {
+    const { PLYLoader } = await import('three/addons/loaders/PLYLoader.js');
     const loader = new PLYLoader();
     return new Promise((resolve, reject) => {
         loader.load(url, (geometry) => {
@@ -175,8 +174,9 @@ async function loadPLY(url) {
     });
 }
 
-/** FBX */
+/** FBX — dynamic import since not always needed */
 async function loadFBX(url) {
+    const { FBXLoader } = await import('three/addons/loaders/FBXLoader.js');
     const loader = new FBXLoader();
     return new Promise((resolve, reject) => {
         loader.load(url, (fbx) => {
@@ -186,8 +186,9 @@ async function loadFBX(url) {
     });
 }
 
-/** STL */
+/** STL — dynamic import since not always needed */
 async function loadSTL(url) {
+    const { STLLoader } = await import('three/addons/loaders/STLLoader.js');
     const loader = new STLLoader();
     return new Promise((resolve, reject) => {
         loader.load(url, (geometry) => {
