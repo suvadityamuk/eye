@@ -68,6 +68,7 @@ class App {
 
         this._bindFileUpload();
         this._bindDropzone();
+        this._bindUrlLoad();
         this._bindSceneControls();
         this._bindPanelToggles();
         this._bindComparisonToggle();
@@ -77,7 +78,10 @@ class App {
         this._bindThemeToggle();
         this._bindHelpPane();
 
-        showToast('Ready — drop a 3D file to begin', 'info');
+        // Check for URL parameter on load (e.g. ?url=https://example.com/model.glb)
+        this._checkUrlParam();
+
+        showToast('Ready — drop a 3D file or paste a URL to begin', 'info');
     }
 
     // ─── FILE UPLOAD ───────────────────────────────────────────────
@@ -111,6 +115,7 @@ class App {
         });
 
         viewport.addEventListener('drop', (e) => {
+            e.preventDefault();
             dropzone.classList.remove('drag-over');
             const files = Array.from(e.dataTransfer.files);
             if (files.length > 0) this._handleFiles(files, 'drop');
@@ -487,6 +492,140 @@ class App {
     // ─── UTILITIES ─────────────────────────────────────────────────
     _showLoading(show) {
         document.getElementById('loading-overlay').style.display = show ? '' : 'none';
+    }
+
+    // ─── URL LOADING ──────────────────────────────────────────────
+    _bindUrlLoad() {
+        const urlInput = document.getElementById('url-input');
+        const loadBtn = document.getElementById('btn-url-load');
+
+        if (loadBtn) {
+            loadBtn.addEventListener('click', () => {
+                this._loadFromUrl(urlInput?.value?.trim());
+            });
+        }
+
+        if (urlInput) {
+            urlInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this._loadFromUrl(urlInput.value.trim());
+                }
+            });
+        }
+    }
+
+    _checkUrlParam() {
+        const params = new URLSearchParams(window.location.search);
+        const url = params.get('url');
+        if (url) {
+            // Set the input field value and trigger load
+            const urlInput = document.getElementById('url-input');
+            if (urlInput) urlInput.value = url;
+            // Slight delay so the UI is ready
+            setTimeout(() => this._loadFromUrl(url), 300);
+        }
+    }
+
+    async _loadFromUrl(url) {
+        if (!url) {
+            showToast('Please enter a URL', 'warning');
+            return;
+        }
+
+        // Basic URL validation
+        let parsedUrl;
+        try {
+            parsedUrl = new URL(url);
+        } catch {
+            showToast('Invalid URL — please enter a valid link', 'error');
+            return;
+        }
+
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+            showToast('Only HTTP/HTTPS URLs are supported', 'error');
+            return;
+        }
+
+        // Extract filename from URL path
+        const pathParts = parsedUrl.pathname.split('/');
+        let filename = pathParts[pathParts.length - 1] || 'model';
+        // Remove query params from filename
+        filename = filename.split('?')[0];
+
+        // If no extension, try to detect from content-type later
+        const ext = filename.includes('.') ? filename.split('.').pop().toLowerCase() : null;
+        if (ext) {
+            const fmt = getFormatType(filename);
+            if (!fmt) {
+                showToast(`Unsupported format: .${ext}`, 'error');
+                return;
+            }
+        }
+
+        this._showLoading(true);
+        showToast('Fetching file from URL...', 'info');
+
+        try {
+            const response = await fetch(url, {
+                mode: 'cors',
+                credentials: 'omit',
+            });
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error('File not found (404)');
+                } else if (response.status === 403) {
+                    throw new Error('Access denied (403) — the server may not allow direct downloads');
+                } else {
+                    throw new Error(`Server returned ${response.status} ${response.statusText}`);
+                }
+            }
+
+            const blob = await response.blob();
+
+            if (blob.size === 0) {
+                throw new Error('Downloaded file is empty');
+            }
+
+            // If we still don't have an extension, try content-type
+            if (!ext) {
+                const ct = response.headers.get('content-type') || '';
+                const typeMap = {
+                    'model/gltf-binary': '.glb',
+                    'model/gltf+json': '.gltf',
+                    'application/octet-stream': '.glb',
+                };
+                const guessed = typeMap[ct.split(';')[0].trim()];
+                if (guessed) {
+                    filename = filename + guessed;
+                } else {
+                    // Default to .glb as most common binary format
+                    filename = filename + '.glb';
+                }
+            }
+
+            const file = new File([blob], filename, { type: blob.type });
+            this._showLoading(false);
+            await this._handleFiles([file], 'url');
+
+            // Clear the URL input on success
+            const urlInput = document.getElementById('url-input');
+            if (urlInput) urlInput.value = '';
+
+        } catch (err) {
+            this._showLoading(false);
+            console.error('URL load error:', err);
+
+            // Provide user-friendly error messages
+            if (err instanceof TypeError && err.message.includes('fetch')) {
+                showToast('Could not reach the URL — check the link or try a CORS-friendly source', 'error');
+            } else if (err.name === 'AbortError') {
+                showToast('Request timed out — the server took too long to respond', 'error');
+            } else {
+                showToast(`URL load failed: ${err.message}`, 'error');
+            }
+        }
     }
 
 

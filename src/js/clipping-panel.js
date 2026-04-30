@@ -53,7 +53,7 @@ export class ClippingPanel {
 
     _bindElements() {
         this.enableToggle = document.getElementById('toggle-clipping');
-        this.axisBtns = document.querySelectorAll('.clip-axis-btn');
+        this.axisBtns = document.querySelectorAll('#panel-clipping .clip-axis-btn');
         this.posSlider = document.getElementById('clip-position');
         this.posValue = document.getElementById('clip-position-value');
         this.flipToggle = document.getElementById('toggle-clip-flip');

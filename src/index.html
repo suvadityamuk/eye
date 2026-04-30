@@ -4,15 +4,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EYE — 3D Object Viewer</title>
+    <title>EYE — Free Online 3D Model Viewer | GLTF, OBJ, FBX, PLY, STL & More</title>
     <meta name="description"
-        content="Browser-based 3D object viewer. Supports GLTF, GLB, OBJ, PLY, FBX, STL, PDB, Splat, SPZ, SOG formats.">
+        content="Free browser-based 3D model viewer. Drag-and-drop to view, inspect, compare, and export GLTF, GLB, OBJ, PLY, FBX, STL, 3DM, PDB, Splat, SPZ, and SOG files. No install required.">
+    <meta name="keywords" content="3D viewer, 3D model viewer, GLTF viewer, OBJ viewer, FBX viewer, PLY viewer, STL viewer, GLB viewer, 3D file viewer, online 3D viewer, browser 3D viewer, three.js viewer, Gaussian Splat viewer, 3D comparison, free 3D viewer">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="EYE 3D Viewer">
+    <link rel="canonical" href="https://eye.suvadityamuk.com/">
+    <meta name="theme-color" content="#e63946">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://eye.suvadityamuk.com/">
+    <meta property="og:title" content="EYE — Free Online 3D Model Viewer">
+    <meta property="og:description" content="View, inspect, compare, and export 3D models directly in your browser. Supports GLTF, OBJ, FBX, PLY, STL, Gaussian Splat, and more. No plugins required.">
+    <meta property="og:site_name" content="EYE 3D Viewer">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="EYE — Free Online 3D Model Viewer">
+    <meta name="twitter:description" content="View, inspect, compare, and export 3D models directly in your browser. Supports GLTF, OBJ, FBX, PLY, STL, and more.">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "EYE 3D Viewer",
+        "url": "https://eye.suvadityamuk.com/",
+        "description": "Free browser-based 3D model viewer supporting GLTF, GLB, OBJ, PLY, FBX, STL, 3DM, PDB, Splat, SPZ, and SOG formats with comparison mode, material editing, and export capabilities.",
+        "applicationCategory": "DesignApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires a modern browser with WebGL support",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "Drag-and-drop 3D model loading",
+            "Side-by-side model comparison (up to 4)",
+            "Material inspection and editing",
+            "Animation playback with timeline",
+            "Model export (GLB, OBJ, STL, PLY)",
+            "Measurement tools",
+            "Multiple render modes (PBR, Unlit, Normal, Matcap, Depth, UV)",
+            "Clipping plane visualization",
+            "Camera placement and screenshot capture"
+        ]
+    }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=2.1.0">
+    <link rel="stylesheet" href="css/style.css?v=2.2.0">
     <script data-cfasync="false" type="importmap">
     {
         "imports": {
@@ -283,6 +332,13 @@
                         <div class="dropzone-icon">⬆</div>
                         <div class="dropzone-text">DROP 3D FILE HERE</div>
                         <div class="dropzone-formats">GLTF · GLB · OBJ · PLY · FBX · STL · 3DM · PDB · SPLAT · SPZ · SOG</div>
+                        <div class="dropzone-url-input">
+                            <span class="dropzone-or">— or load from URL —</span>
+                            <div class="url-input-row">
+                                <input type="url" id="url-input" class="hud-url-input" placeholder="https://example.com/model.glb" spellcheck="false" autocomplete="off">
+                                <button id="btn-url-load" class="hud-btn url-load-btn" title="Load from URL">LOAD</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -852,7 +908,28 @@
         </div>
     </div>
 
-    <script data-cfasync="false" type="module" src="js/app.js?v=2.1.0"></script>
+    <noscript>
+        <div style="padding:40px;text-align:center;font-family:sans-serif;color:#ccc;background:#080808;min-height:100vh;">
+            <h1>EYE — Free Online 3D Model Viewer</h1>
+            <p>EYE is a free, browser-based 3D model viewer. Drag and drop files to view, inspect, compare, and export 3D models directly in your browser.</p>
+            <h2>Supported Formats</h2>
+            <p>GLTF, GLB, OBJ, PLY, FBX, STL, 3DM, PDB, Gaussian Splat, SPZ, SOG</p>
+            <h2>Features</h2>
+            <ul style="list-style:none;padding:0;">
+                <li>Side-by-side model comparison (up to 4 viewports)</li>
+                <li>Material inspection and editing</li>
+                <li>Animation playback with timeline controls</li>
+                <li>Model export to GLB, OBJ, STL, PLY</li>
+                <li>Measurement tools and bounding box visualization</li>
+                <li>Multiple render modes: PBR, Unlit, Normal, Matcap, Depth, UV</li>
+                <li>Clipping plane visualization</li>
+                <li>Camera placement and screenshot capture</li>
+                <li>Load models from URL</li>
+            </ul>
+            <p>Please enable JavaScript to use EYE.</p>
+        </div>
+    </noscript>
+    <script data-cfasync="false" type="module" src="js/app.js?v=2.2.0"></script>
 </body>
 
 </html>

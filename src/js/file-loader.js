@@ -143,30 +143,37 @@ async function loadPLY(url) {
             geometry.computeVertexNormals();
             let object;
 
-            if (geometry.attributes.color) {
-                // Point cloud or colored mesh
-                if (geometry.index) {
-                    const material = new THREE.MeshStandardMaterial({
-                        vertexColors: true,
-                        roughness: 0.6,
-                        metalness: 0.1,
-                    });
-                    object = new THREE.Mesh(geometry, material);
-                } else {
-                    const material = new THREE.PointsMaterial({
-                        size: 0.01,
-                        vertexColors: true,
-                        sizeAttenuation: true,
-                    });
-                    object = new THREE.Points(geometry, material);
-                }
-            } else {
+            const hasColors = !!geometry.attributes.color;
+            const hasIndex = !!geometry.index;
+            const vertexCount = geometry.attributes.position?.count || 0;
+
+            // Determine if this geometry represents a mesh or a point cloud.
+            // Indexed geometry is always a mesh. Non-indexed geometry whose vertex
+            // count is divisible by 3 is treated as a triangle soup (common for
+            // PLY exports from 3D generators). Everything else is a point cloud.
+            const isMesh = hasIndex || (vertexCount >= 3 && vertexCount % 3 === 0);
+
+            if (isMesh) {
                 const material = new THREE.MeshStandardMaterial({
-                    color: 0xcccccc,
-                    roughness: 0.5,
-                    metalness: 0.2,
+                    vertexColors: hasColors,
+                    color: hasColors ? 0xffffff : 0xcccccc,
+                    roughness: hasColors ? 0.6 : 0.5,
+                    metalness: hasColors ? 0.1 : 0.2,
+                    // DoubleSide: PLY files often have inconsistent face winding,
+                    // which causes computed normals to face the wrong way on some
+                    // faces, making them appear black under single-sided lighting.
+                    side: THREE.DoubleSide,
                 });
                 object = new THREE.Mesh(geometry, material);
+            } else {
+                // Pure point cloud (no faces)
+                const material = new THREE.PointsMaterial({
+                    size: hasColors ? 0.01 : 0.005,
+                    vertexColors: hasColors,
+                    color: hasColors ? 0xffffff : 0xcccccc,
+                    sizeAttenuation: true,
+                });
+                object = new THREE.Points(geometry, material);
             }
 
             resolve({ object, clips: [] });
