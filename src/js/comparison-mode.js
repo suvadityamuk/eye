@@ -4,7 +4,7 @@
  * SceneManagers are lazily initialized when slots become visible.
  */
 import { SceneManager } from './scene-manager.js';
-import { loadFile, isUSDFormat, getFormatType, formatFileSize } from './file-loader.js';
+import { loadFile, getFormatType, formatFileSize } from './file-loader.js';
 import { MeasurementManager } from './measurement-manager.js';
 import { showToast } from './toast.js';
 
@@ -250,10 +250,7 @@ export class ComparisonMode {
 
         if (!primaryFile) return;
 
-        if (isUSDFormat(primaryFile.name)) {
-            showToast('USD format support coming soon', 'warning');
-            return;
-        }
+
 
         // Ensure the slot element is visible before creating the renderer
         this.slotElements[slotIndex].classList.remove('slot-hidden');
@@ -288,11 +285,7 @@ export class ComparisonMode {
             this.slotFiles[slotIndex] = primaryFile;
             this._updateLayout();
         } catch (err) {
-            if (err.message === 'USD_COMING_SOON') {
-                showToast('USD format support coming soon', 'warning');
-            } else {
-                showToast(`Error loading: ${err.message}`, 'error');
-            }
+            showToast(`Error loading: ${err.message}`, 'error');
         }
     }
 

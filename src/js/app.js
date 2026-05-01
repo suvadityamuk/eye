@@ -2,7 +2,7 @@
  * app.js — Main application orchestrator
  */
 import { SceneManager } from './scene-manager.js';
-import { loadFile, isUSDFormat, getFormatType, formatFileSize } from './file-loader.js';
+import { loadFile, getFormatType, formatFileSize } from './file-loader.js';
 import { MaterialPanel } from './material-panel.js';
 import { LightingPanel } from './lighting-panel.js';
 import { AnimationPanel } from './animation-panel.js';
@@ -134,11 +134,7 @@ class App {
             return;
         }
 
-        // Check USD
-        if (isUSDFormat(primaryFile.name)) {
-            showToast('OpenUSD support coming soon — stay tuned!', 'warning');
-            return;
-        }
+
 
         // Route to comparison slot if in comparison mode
         if (this.isComparisonMode) {
@@ -185,7 +181,7 @@ class App {
         } catch (err) {
             console.error('Load error:', err);
             if (err.message === 'USD_COMING_SOON') {
-                showToast('OpenUSD support coming soon — stay tuned!', 'warning');
+                showToast('OpenUSD format is not supported in this build', 'warning');
             } else {
                 showToast(`Error: ${err.message}`, 'error');
             }

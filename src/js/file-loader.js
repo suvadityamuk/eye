@@ -20,22 +20,12 @@ const SUPPORTED_FORMATS = {
     'usd': 'usd', 'usda': 'usd', 'usdc': 'usd', 'usdz': 'usd',
 };
 
-const USD_EXTENSIONS = ['usd', 'usda', 'usdc', 'usdz'];
-
 /**
  * Returns the format type for a filename.
  */
 export function getFormatType(filename) {
     const ext = filename.split('.').pop().toLowerCase();
     return SUPPORTED_FORMATS[ext] || null;
-}
-
-/**
- * Check if this is a USD file (coming soon)
- */
-export function isUSDFormat(filename) {
-    const ext = filename.split('.').pop().toLowerCase();
-    return USD_EXTENSIONS.includes(ext);
 }
 
 /**
@@ -49,9 +39,7 @@ export async function loadFile(file, companionFiles = []) {
         throw new Error(`Unsupported format: .${ext}`);
     }
 
-    if (formatType === 'usd') {
-        throw new Error('USD_COMING_SOON');
-    }
+
 
     const url = URL.createObjectURL(file);
 
@@ -67,6 +55,7 @@ export async function loadFile(file, companionFiles = []) {
             case 'splat': return await loadSplat(file);
             case 'spz': return await loadSPZ(file);
             case 'sog': return await loadSOG(file);
+            case 'usd': return await loadUSD(url, file);
             default: throw new Error(`No loader for format: ${formatType}`);
         }
     } finally {
@@ -499,6 +488,30 @@ async function loadSOG(file) {
 
     const points = createGaussianPointCloud(positions, colors, sizes);
     return { object: points, clips: [] };
+}
+
+/** USD / USDA / USDZ — OpenUSD via Three.js USDZLoader */
+async function loadUSD(url, file) {
+    const { USDZLoader } = await import('three/addons/loaders/USDZLoader.js');
+    const loader = new USDZLoader();
+
+    return new Promise((resolve, reject) => {
+        loader.load(url, (group) => {
+            prepareMaterials(group);
+            resolve({ object: group, clips: [] });
+        }, undefined, (err) => {
+            // Provide a friendlier message for the common "crate not supported" error
+            const msg = err?.message || String(err);
+            if (msg.includes('Crate')) {
+                reject(new Error(
+                    'Binary USD (.usdc) crate files are not yet supported. ' +
+                    'Please export as ASCII .usda or packaged .usdz instead.'
+                ));
+            } else {
+                reject(err);
+            }
+        });
+    });
 }
 
 /**
